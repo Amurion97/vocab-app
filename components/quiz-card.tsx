@@ -31,6 +31,7 @@ export function QuizCard({ word }: { word: Word }) {
     null
   )
   const [isPending, startTransition] = useTransition()
+  const [isNavigating, setIsNavigating] = useState(false)
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -56,11 +57,11 @@ export function QuizCard({ word }: { word: Word }) {
   }
 
   function onNext() {
-    setSentence("")
-    setResult(null)
-    setError(null)
-    router.push(`/review?after=${word.id}`)
-    router.refresh()
+    setIsNavigating(true)
+    startTransition(() => {
+      router.push(`/review?after=${word.id}`)
+      router.refresh()
+    })
   }
 
   const grammarIssues = result?.issues.filter((issue) => issue.source === "grammar") ?? []
@@ -142,16 +143,29 @@ export function QuizCard({ word }: { word: Word }) {
               </p>
             ) : null}
             {result.passed ? (
-              <Button type="button" onClick={onNext}>
-                Next word
+              <Button
+                type="button"
+                onClick={onNext}
+                disabled={isNavigating}
+              >
+                {isNavigating ? "Loading…" : "Next word"}
               </Button>
             ) : (
               <div className="flex flex-col gap-2">
-                <Button type="button" onClick={onTryAgain}>
+                <Button
+                  type="button"
+                  onClick={onTryAgain}
+                  disabled={isNavigating}
+                >
                   Try again
                 </Button>
-                <Button type="button" variant="outline" onClick={onNext}>
-                  Next word
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onNext}
+                  disabled={isNavigating}
+                >
+                  {isNavigating ? "Loading…" : "Next word"}
                 </Button>
               </div>
             )}
