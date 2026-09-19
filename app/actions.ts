@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 
-import { isUniqueConstraint, prismaErrorMessage } from "@/lib/db-error"
+import { logExpectedError } from "@/lib/app-log"
+import { isUniqueConstraint } from "@/lib/db-error"
 import type { ReviewIssue } from "@/lib/issues"
 import { translateEnglishToVietnamese } from "@/lib/mymemory"
 import { prisma } from "@/lib/prisma"
@@ -27,16 +28,33 @@ export type QuizResult =
     }
   | { ok: false; error: string; reason?: "busy" }
 
-export async function translateWord(english: string): Promise<TranslateResult> {
-  try {
-    const vietnamese = await translateEnglishToVietnamese(english)
-    return { ok: true, vietnamese }
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Translation failed.",
-    }
+function prismaCode(error: unknown) {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const code = (error as { code?: unknown }).code
+    return typeof code === "string" ? code : undefined
   }
+}
+
+function expectedDbError(action: string, error: unknown) {
+  if (isUniqueConstraint(error)) {
+    logExpectedError({ action, error, code: "P2002" })
+    return "That English word is already saved."
+  }
+
+  const code = prismaCode(error)
+  if (code === "P1001" || code === "P2024") {
+    logExpectedError({ action, error, code })
+    return "Database is waking up or busy. Try saving again."
+  }
+
+  if (code === "P2025") {
+    logExpectedError({ action, error, code })
+    return "That word is no longer saved."
+  }
+}
+
+export async function translateWord(english: string): Promise<TranslateResult> {
+  return translateEnglishToVietnamese(english)
 }
 
 export async function createWord(input: {
@@ -61,12 +79,11 @@ export async function createWord(input: {
       },
     })
   } catch (error) {
-    return {
-      ok: false,
-      error: isUniqueConstraint(error)
-        ? "That English word is already saved."
-        : prismaErrorMessage(error, "Could not save the word."),
+    const message = expectedDbError("createWord", error)
+    if (message) {
+      return { ok: false, error: message }
     }
+    throw error
   }
 
   revalidatePath("/")
@@ -94,10 +111,11 @@ export async function updateWord(
       },
     })
   } catch (error) {
-    return {
-      ok: false,
-      error: prismaErrorMessage(error, "Could not update the word."),
+    const message = expectedDbError("updateWord", error)
+    if (message) {
+      return { ok: false, error: message }
     }
+    throw error
   }
 
   revalidatePath("/")
@@ -109,10 +127,11 @@ export async function deleteWord(id: string): Promise<ActionResult> {
   try {
     await prisma.word.delete({ where: { id } })
   } catch (error) {
-    return {
-      ok: false,
-      error: prismaErrorMessage(error, "Could not delete the word."),
+    const message = expectedDbError("deleteWord", error)
+    if (message) {
+      return { ok: false, error: message }
     }
+    throw error
   }
 
   revalidatePath("/")
