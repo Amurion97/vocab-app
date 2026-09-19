@@ -12,6 +12,33 @@ const MAX_ATTEMPTS = 3
 const BACKOFF_MS = [0, 1000, 2000] as const
 const BUSY_MESSAGE = "Usage check is busy. Try again in a moment."
 
+const USAGE_CHECK_SCHEMA = {
+  type: "object",
+  properties: {
+    wordPresent: {
+      type: "boolean",
+      description:
+        "True if the target word or a normal inflection appears in the sentence.",
+    },
+    usedCorrectly: {
+      type: "boolean",
+      description:
+        "True only if wordPresent is true AND the word is used with the intended meaning (collocation and sense).",
+    },
+    feedback: {
+      type: "string",
+      description: "One or two short sentences explaining the grade.",
+    },
+    suggestion: {
+      type: ["string", "null"],
+      description:
+        "A corrected example sentence if usedCorrectly is false, otherwise null.",
+    },
+  },
+  required: ["wordPresent", "usedCorrectly", "feedback", "suggestion"],
+  additionalProperties: false,
+} as const
+
 export class UsageCheckBusyError extends Error {
   constructor() {
     super(BUSY_MESSAGE)
@@ -47,16 +74,7 @@ Intended meaning (Vietnamese): ${params.vietnamese}
 Student sentence:
 """${params.sentence}"""
 
-Grade ONLY whether the target word is used with the intended meaning (collocation and sense). Ignore minor grammar unless it makes the meaning wrong.
-
-Return JSON only with this shape:
-{"wordPresent":boolean,"usedCorrectly":boolean,"feedback":string,"suggestion":string|null}
-
-Rules:
-- wordPresent is true if the word or a normal inflection appears in the sentence.
-- usedCorrectly is true only if wordPresent is true AND the word is used with the intended meaning.
-- feedback is one or two short sentences.
-- suggestion is a corrected example sentence if usedCorrectly is false, otherwise null.`
+Grade ONLY whether the target word is used with the intended meaning (collocation and sense). Ignore minor grammar unless it makes the meaning wrong.`
 
   let lastError: unknown
 
@@ -72,6 +90,7 @@ Rules:
         contents: prompt,
         config: {
           responseMimeType: "application/json",
+          responseJsonSchema: USAGE_CHECK_SCHEMA,
           temperature: 0.2,
           abortSignal: AbortSignal.timeout(20_000),
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -139,8 +158,7 @@ function parseUsageCheck(text: string | undefined): UsageCheck {
     throw new Error("Gemini returned an empty response.")
   }
 
-  const jsonText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")
-  const parsed = JSON.parse(jsonText) as Partial<UsageCheck>
+  const parsed = JSON.parse(text) as Partial<UsageCheck>
   const wordPresent = Boolean(parsed.wordPresent)
   const usedCorrectly = wordPresent && Boolean(parsed.usedCorrectly)
 
