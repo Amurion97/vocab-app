@@ -25,7 +25,7 @@ export type QuizResult =
       issues: ReviewIssue[]
       grammarUnavailable: boolean
     }
-  | { ok: false; error: string }
+  | { ok: false; error: string; reason?: "busy" }
 
 export async function translateWord(english: string): Promise<TranslateResult> {
   try {

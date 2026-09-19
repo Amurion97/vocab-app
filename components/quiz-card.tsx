@@ -27,6 +27,7 @@ export function QuizCard({ word }: { word: Word }) {
   const reminders = parseIssues(word.issues)
   const [sentence, setSentence] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [isBusy, setIsBusy] = useState(false)
   const [result, setResult] = useState<Extract<QuizResult, { ok: true }> | null>(
     null
   )
@@ -36,24 +37,37 @@ export function QuizCard({ word }: { word: Word }) {
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    setIsBusy(false)
     startTransition(async () => {
-      const response = await fetch("/api/check-usage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wordId: word.id, sentence }),
-      })
-      const nextResult = (await response.json()) as QuizResult
-      if (!nextResult.ok) {
-        setError(nextResult.error)
-        return
+      try {
+        const response = await fetch("/api/check-usage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wordId: word.id, sentence }),
+        })
+        const nextResult = (await response.json()) as QuizResult
+        if (!nextResult || typeof nextResult !== "object" || !("ok" in nextResult)) {
+          setError("Could not check usage.")
+          return
+        }
+        if (!nextResult.ok) {
+          if (nextResult.reason === "busy") {
+            setIsBusy(true)
+          }
+          setError(nextResult.error)
+          return
+        }
+        setResult(nextResult)
+      } catch {
+        setError("Could not check usage.")
       }
-      setResult(nextResult)
     })
   }
 
   function onTryAgain() {
     setResult(null)
     setError(null)
+    setIsBusy(false)
   }
 
   function onNext() {
@@ -182,7 +196,13 @@ export function QuizCard({ word }: { word: Word }) {
                 required
               />
             </div>
-            {error ? (
+            {isBusy ? (
+              <Alert>
+                <CircleAlertIcon />
+                <AlertTitle>Usage check is busy</AlertTitle>
+                <AlertDescription>Try again in a moment.</AlertDescription>
+              </Alert>
+            ) : error ? (
               <p className="text-sm text-destructive">{error}</p>
             ) : null}
             <Button type="submit" disabled={isPending}>

@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai"
+import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai"
 
 export type UsageCheck = {
   wordPresent: boolean
@@ -7,7 +7,26 @@ export type UsageCheck = {
   suggestion: string | null
 }
 
-const MODELS = ["gemini-3.6-flash"]
+const MODEL = "gemini-3.8-flash"
+const MAX_ATTEMPTS = 3
+const BACKOFF_MS = [0, 1000, 2000] as const
+const BUSY_MESSAGE = "Usage check is busy. Try again in a moment."
+
+export class UsageCheckBusyError extends Error {
+  constructor() {
+    super(BUSY_MESSAGE)
+    this.name = "UsageCheckBusyError"
+  }
+}
+
+export function isUsageCheckBusyError(
+  error: unknown
+): error is UsageCheckBusyError {
+  return (
+    error instanceof UsageCheckBusyError ||
+    (error instanceof Error && error.name === "UsageCheckBusyError")
+  )
+}
 
 export async function checkWordUsage(params: {
   english: string
@@ -41,25 +60,62 @@ Rules:
 
   let lastError: unknown
 
-  for (const model of MODELS) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const delay = BACKOFF_MS[attempt]
+    if (delay) {
+      await sleep(delay)
+    }
+
     try {
       const response = await ai.models.generateContent({
-        model,
+        model: MODEL,
         contents: prompt,
         config: {
           responseMimeType: "application/json",
           temperature: 0.2,
           abortSignal: AbortSignal.timeout(20_000),
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         },
       })
 
       return parseUsageCheck(response.text)
     } catch (error) {
       lastError = error
+      if (isTimeout(error) || !isRetryableCapacityFailure(error)) {
+        break
+      }
     }
   }
 
+  if (isBusyFailure(lastError)) {
+    console.error("Usage check busy", lastError)
+    throw new UsageCheckBusyError()
+  }
+
   throw new Error(geminiErrorMessage(lastError))
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isTimeout(error: unknown) {
+  return error instanceof Error && error.name === "TimeoutError"
+}
+
+function isRetryableCapacityFailure(error: unknown) {
+  if (isTimeout(error)) {
+    return false
+  }
+  if (error instanceof ApiError && (error.status === 429 || error.status === 503)) {
+    return true
+  }
+  const raw = error instanceof Error ? error.message : String(error)
+  return /429|503|RESOURCE_EXHAUSTED|overloaded|unavailable/i.test(raw)
+}
+
+function isBusyFailure(error: unknown) {
+  return isTimeout(error) || isRetryableCapacityFailure(error)
 }
 
 function geminiErrorMessage(error: unknown) {
@@ -72,7 +128,7 @@ function geminiErrorMessage(error: unknown) {
   } catch {
     // The SDK sometimes throws a JSON blob; fall through to the raw message.
   }
-  if (error instanceof DOMException && error.name === "TimeoutError") {
+  if (isTimeout(error)) {
     return "Gemini timed out. Try again."
   }
   return raw || "Gemini could not grade that sentence."

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
-import { checkWordUsage } from "@/lib/gemini-usage"
+import { checkWordUsage, isUsageCheckBusyError } from "@/lib/gemini-usage"
 import type { ReviewIssue } from "@/lib/issues"
 import { checkGrammar } from "@/lib/languagetool"
 import { prisma } from "@/lib/prisma"
@@ -45,6 +45,12 @@ export async function POST(request: NextRequest) {
 
     if (usageResult.status === "rejected") {
       const error = usageResult.reason
+      if (isUsageCheckBusyError(error)) {
+        return NextResponse.json(
+          { ok: false, error: error.message, reason: "busy" },
+          { status: 503 }
+        )
+      }
       return NextResponse.json(
         {
           ok: false,
