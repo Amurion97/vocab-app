@@ -6,8 +6,8 @@ import { CircleAlertIcon, CircleCheckIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-import { type QuizResult } from "@/app/actions"
 import { parseIssues } from "@/lib/issues"
+import { UsageCheckActions } from "@/components/usage-check-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,53 +21,35 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useUsageCheck } from "@/hooks/use-usage-check"
 
 export function QuizCard({ word }: { word: Word }) {
   const router = useRouter()
   const reminders = parseIssues(word.issues)
   const [sentence, setSentence] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [isBusy, setIsBusy] = useState(false)
-  const [result, setResult] = useState<Extract<QuizResult, { ok: true }> | null>(
-    null
-  )
-  const [isPending, startTransition] = useTransition()
   const [isNavigating, setIsNavigating] = useState(false)
+  const [, startTransition] = useTransition()
+  const {
+    result,
+    error,
+    isBusy,
+    isChecking,
+    canCancel,
+    check,
+    cancel,
+    reset,
+  } = useUsageCheck()
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError(null)
-    setIsBusy(false)
-    startTransition(async () => {
-      try {
-        const response = await fetch("/api/check-usage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wordId: word.id, sentence }),
-        })
-        const nextResult = (await response.json()) as QuizResult
-        if (!nextResult || typeof nextResult !== "object" || !("ok" in nextResult)) {
-          setError("Could not check usage.")
-          return
-        }
-        if (!nextResult.ok) {
-          if (nextResult.reason === "busy") {
-            setIsBusy(true)
-          }
-          setError(nextResult.error)
-          return
-        }
-        setResult(nextResult)
-      } catch {
-        setError("Could not check usage.")
-      }
-    })
+    if (isChecking) {
+      return
+    }
+    check({ wordId: word.id, sentence })
   }
 
   function onTryAgain() {
-    setResult(null)
-    setError(null)
-    setIsBusy(false)
+    reset()
   }
 
   function onNext() {
@@ -191,7 +173,11 @@ export function QuizCard({ word }: { word: Word }) {
               <Textarea
                 id="sentence"
                 value={sentence}
-                onChange={(event) => setSentence(event.target.value)}
+                disabled={isChecking}
+                onChange={(event) => {
+                  setSentence(event.target.value)
+                  reset()
+                }}
                 placeholder={`Use “${word.english}” in a sentence.`}
                 required
               />
@@ -205,9 +191,14 @@ export function QuizCard({ word }: { word: Word }) {
             ) : error ? (
               <p className="text-sm text-destructive">{error}</p>
             ) : null}
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Checking…" : "Check usage"}
-            </Button>
+            <UsageCheckActions
+              type="submit"
+              variant="default"
+              startDisabled={!sentence.trim()}
+              isChecking={isChecking}
+              canCancel={canCancel}
+              onCancel={cancel}
+            />
           </form>
         )}
       </CardContent>

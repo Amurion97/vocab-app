@@ -157,6 +157,13 @@ export async function POST(request: NextRequest) {
 
     const { grade } = graded
 
+    if (request.signal.aborted) {
+      return NextResponse.json(
+        { ok: false, error: "Cancelled." },
+        { status: 499 }
+      )
+    }
+
     if (persistWordId) {
       const storedIssues =
         grade.passed && grade.issues.length === 0 ? [] : grade.issues

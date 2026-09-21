@@ -4,7 +4,8 @@ import { useState, useTransition } from "react"
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react"
 import Link from "next/link"
 
-import { createWord, translateWord, type QuizResult } from "@/app/actions"
+import { createWord, translateWord } from "@/app/actions"
+import { UsageCheckActions } from "@/components/usage-check-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,96 +19,72 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useUsageCheck } from "@/hooks/use-usage-check"
 
 export function AddWordForm() {
   const [english, setEnglish] = useState("")
   const [vietnamese, setVietnamese] = useState("")
   const [example, setExample] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [isBusy, setIsBusy] = useState(false)
-  const [usageResult, setUsageResult] = useState<Extract<
-    QuizResult,
-    { ok: true }
-  > | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isTranslating, startTranslate] = useTransition()
-  const [isChecking, startCheck] = useTransition()
+  const {
+    result: usageResult,
+    error: usageError,
+    isBusy,
+    isChecking,
+    canCancel,
+    check,
+    cancel,
+    reset,
+  } = useUsageCheck()
 
-  function clearUsage() {
-    setUsageResult(null)
-    setIsBusy(false)
-  }
+  const fieldsLocked = isChecking
 
   function onTranslate() {
-    setError(null)
+    setFormError(null)
     startTranslate(async () => {
       const result = await translateWord(english)
       if (!result.ok) {
-        setError(result.error)
+        setFormError(result.error)
         return
       }
       setVietnamese(result.vietnamese)
-      clearUsage()
+      reset()
     })
   }
 
   function onCheckUsage() {
-    setError(null)
-    setIsBusy(false)
-    setUsageResult(null)
-    startCheck(async () => {
-      try {
-        const response = await fetch("/api/check-usage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            english,
-            vietnamese,
-            sentence: example,
-          }),
-        })
-        const nextResult = (await response.json()) as QuizResult
-        if (!nextResult || typeof nextResult !== "object" || !("ok" in nextResult)) {
-          setError("Could not check usage.")
-          return
-        }
-        if (!nextResult.ok) {
-          if (nextResult.reason === "busy") {
-            setIsBusy(true)
-          }
-          setError(nextResult.error)
-          return
-        }
-        setUsageResult(nextResult)
-      } catch {
-        setError("Could not check usage.")
-      }
+    setFormError(null)
+    check({
+      english,
+      vietnamese,
+      sentence: example,
     })
   }
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError(null)
+    if (isChecking) {
+      return
+    }
+    setFormError(null)
     startTransition(async () => {
       const result = await createWord({ english, vietnamese, example })
       if (!result.ok) {
-        setError(result.error)
+        setFormError(result.error)
         return
       }
       setEnglish("")
       setVietnamese("")
       setExample("")
-      clearUsage()
+      reset()
     })
   }
 
   const grammarIssues =
     usageResult?.issues.filter((issue) => issue.source === "grammar") ?? []
-  const canCheck =
-    Boolean(english.trim() && vietnamese.trim() && example.trim()) &&
-    !isChecking &&
-    !isTranslating &&
-    !isPending
+  const error = usageError ?? formError
 
   return (
     <Card>
@@ -126,9 +103,10 @@ export function AddWordForm() {
               <Input
                 id="english"
                 value={english}
+                disabled={fieldsLocked}
                 onChange={(event) => {
                   setEnglish(event.target.value)
-                  clearUsage()
+                  reset()
                 }}
                 placeholder="ephemeral"
                 required
@@ -136,7 +114,7 @@ export function AddWordForm() {
               <Button
                 type="button"
                 variant="outline"
-                disabled={isTranslating || !english.trim()}
+                disabled={fieldsLocked || isTranslating || !english.trim()}
                 onClick={onTranslate}
               >
                 {isTranslating ? "Translating…" : "Translate"}
@@ -148,9 +126,10 @@ export function AddWordForm() {
             <Input
               id="vietnamese"
               value={vietnamese}
+              disabled={fieldsLocked}
               onChange={(event) => {
                 setVietnamese(event.target.value)
-                clearUsage()
+                reset()
               }}
               placeholder="Translation appears here"
               required
@@ -161,20 +140,26 @@ export function AddWordForm() {
             <Textarea
               id="example"
               value={example}
+              disabled={fieldsLocked}
               onChange={(event) => {
                 setExample(event.target.value)
-                clearUsage()
+                reset()
               }}
               placeholder="The ephemeral bloom lasted only a day."
             />
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!canCheck}
-              onClick={onCheckUsage}
-            >
-              {isChecking ? "Checking…" : "Check usage"}
-            </Button>
+            <UsageCheckActions
+              startDisabled={
+                !english.trim() ||
+                !vietnamese.trim() ||
+                !example.trim() ||
+                isTranslating ||
+                isPending
+              }
+              isChecking={isChecking}
+              canCancel={canCancel}
+              onCheck={onCheckUsage}
+              onCancel={cancel}
+            />
           </div>
           {usageResult ? (
             <div className="flex flex-col gap-3">
@@ -226,7 +211,7 @@ export function AddWordForm() {
           ) : error ? (
             <p className="text-sm text-destructive">{error}</p>
           ) : null}
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={fieldsLocked || isPending}>
             {isPending ? "Saving…" : "Save word"}
           </Button>
         </form>
