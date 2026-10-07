@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
-import { checkWordUsage, isUsageCheckBusyError } from "@/lib/gemini-usage"
+import {
+  checkWordUsage,
+  isUsageCheckBusyError,
+  logUsageCheckFailure,
+} from "@/lib/gemini-usage"
 import type { ReviewIssue } from "@/lib/issues"
 import { checkGrammar } from "@/lib/languagetool"
 import { prisma } from "@/lib/prisma"
@@ -192,6 +196,7 @@ export async function POST(request: NextRequest) {
       ...grade,
     })
   } catch (error) {
+    logUsageCheckFailure(error)
     return NextResponse.json(
       {
         ok: false,

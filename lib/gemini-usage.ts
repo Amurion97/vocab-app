@@ -111,6 +111,7 @@ Grade ONLY whether the target word is used with the intended meaning (collocatio
     throw new UsageCheckBusyError()
   }
 
+  logUsageCheckFailure(lastError)
   throw new Error(geminiErrorMessage(lastError))
 }
 
@@ -135,6 +136,14 @@ function isRetryableCapacityFailure(error: unknown) {
 
 function isBusyFailure(error: unknown) {
   return isTimeout(error) || isRetryableCapacityFailure(error)
+}
+
+export function logUsageCheckFailure(error: unknown) {
+  console.error("Usage check failed", {
+    name: error instanceof Error ? error.name : undefined,
+    message: error instanceof Error ? error.message : String(error),
+    ...(error instanceof ApiError ? { status: error.status } : {}),
+  })
 }
 
 function geminiErrorMessage(error: unknown) {
