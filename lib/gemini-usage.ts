@@ -7,7 +7,9 @@ export type UsageCheck = {
   suggestion: string | null
 }
 
-const MODEL = "gemini-3.8-flash"
+// gemini-3.8-flash used up its quota easily, past free-tier caps: 8/5 requests per minute and 21/20 per day.
+// gemini-3.5-flash-lite still has room on both: 15 per minute and 500 per day.
+const MODEL = "gemini-3.5-flash-lite"
 const MAX_ATTEMPTS = 3
 const BACKOFF_MS = [0, 1000, 2000] as const
 const BUSY_MESSAGE = "Usage check is busy. Try again in a moment."
