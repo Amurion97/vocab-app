@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+At the start of every task, read `.agents/skills/declaring-skill-usage/SKILL.md` and follow it. It requires declaring which Agent Skills you will use and confirming that plan before starting, announcing any skill added mid-task, and reporting every skill used with its concrete impact when finishing.

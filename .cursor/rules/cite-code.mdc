@@ -1,0 +1,20 @@
+---
+description: When explaining this repo, cite the file and lines with Cursor's clickable citation fence.
+alwaysApply: true
+---
+
+# Cite the lines
+
+Explain this repo by pointing at the code. Read the file in this turn, then cite the lines you read.
+
+Use this fence. `startLine` and `endLine` are the line numbers from that read. The path is relative to the workspace root.
+
+```12:15:app/review/page.tsx
+// the lines this claim is about
+```
+
+One fence per region. A path in backticks, such as `app/review/page.tsx`, names the file when the claim is about the file as a whole.
+
+The answer is done when every function, constant, route, or behavior you attribute to this repo has a fence for the lines you read. When you have not found the lines, say so and keep the answer to the lines you did locate.
+
+General language, library, or framework facts stay uncited.
