@@ -113,7 +113,10 @@ export function QuizCard({ word }: { word: Word }) {
               <AlertTitle>
                 {result.passed ? "Passed" : "Try again"}
               </AlertTitle>
-              <AlertDescription>{result.feedback}</AlertDescription>
+              <AlertDescription>
+                <p className="text-foreground">You wrote:<br/>&quot;{sentence.trim()}&quot;</p>
+                <p>{result.feedback}</p>
+              </AlertDescription>
             </Alert>
             {!result.wordPresent ? (
               <p className="text-sm text-destructive">
