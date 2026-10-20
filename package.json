@@ -10,6 +10,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --import ./test/register.mjs --test test/check-usage.test.ts",
     "postinstall": "prisma generate",
     "db:push": "prisma db push"
   },

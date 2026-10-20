@@ -5,7 +5,7 @@ import type { Word } from "@prisma/client"
 import { CircleAlertIcon, PencilIcon, Trash2Icon } from "lucide-react"
 
 import { deleteWord, updateWord } from "@/app/actions"
-import { parseIssues } from "@/lib/issues"
+import { parseIssues, reminderLabel } from "@/lib/issues"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -137,10 +137,11 @@ export function WordCard({ word }: { word: Word }) {
             <AlertTitle>Open reminders</AlertTitle>
             <AlertDescription>
               <ul className="list-disc pl-4">
-                {issues.map((issue) => (
-                  <li key={`${issue.source}-${issue.message}`}>
-                    {issue.source === "meaning" ? "Meaning: " : "Grammar: "}
-                    {issue.message}
+                {issues.map((issue, index) => (
+                  <li
+                    key={`${issue.source}-${issue.checker ?? ""}-${issue.message}-${index}`}
+                  >
+                    {reminderLabel(issue)}
                   </li>
                 ))}
               </ul>

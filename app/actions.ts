@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { logExpectedError } from "@/lib/app-log"
 import { isUniqueConstraint } from "@/lib/db-error"
-import type { ReviewIssue } from "@/lib/issues"
+import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
 import { translateEnglishToVietnamese } from "@/lib/mymemory"
 import { prisma } from "@/lib/prisma"
 
@@ -24,7 +24,7 @@ export type QuizResult =
       feedback: string
       suggestion: string | null
       issues: ReviewIssue[]
-      grammarUnavailable: boolean
+      grammarChecks: GrammarCheckSection[]
     }
   | { ok: false; error: string; reason?: "busy" }
 

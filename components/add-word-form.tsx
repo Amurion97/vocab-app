@@ -2,9 +2,13 @@
 
 import { useState, useTransition } from "react"
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react"
-import Link from "next/link"
 
 import { createWord, translateWord } from "@/app/actions"
+import {
+  GrammarCheckSections,
+  GrammarCheckerCredit,
+  GrammarCheckerPicker,
+} from "@/components/grammar-checkers"
 import { UsageCheckActions } from "@/components/usage-check-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -20,11 +24,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useUsageCheck } from "@/hooks/use-usage-check"
+import type { GrammarChecker } from "@/lib/issues"
 
 export function AddWordForm() {
   const [english, setEnglish] = useState("")
   const [vietnamese, setVietnamese] = useState("")
   const [example, setExample] = useState("")
+  const [checkers, setCheckers] = useState<GrammarChecker[]>([])
   const [formError, setFormError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isTranslating, startTranslate] = useTransition()
@@ -56,10 +62,14 @@ export function AddWordForm() {
 
   function onCheckUsage() {
     setFormError(null)
+    if (checkers.length === 0) {
+      return
+    }
     check({
       english,
       vietnamese,
       sentence: example,
+      checkers,
     })
   }
 
@@ -78,12 +88,11 @@ export function AddWordForm() {
       setEnglish("")
       setVietnamese("")
       setExample("")
+      setCheckers([])
       reset()
     })
   }
 
-  const grammarIssues =
-    usageResult?.issues.filter((issue) => issue.source === "grammar") ?? []
   const error = usageError ?? formError
 
   return (
@@ -147,11 +156,20 @@ export function AddWordForm() {
               }}
               placeholder="The ephemeral bloom lasted only a day."
             />
+            <GrammarCheckerPicker
+              selected={checkers}
+              disabled={fieldsLocked}
+              onChange={(next) => {
+                setCheckers(next)
+                reset()
+              }}
+            />
             <UsageCheckActions
               startDisabled={
                 !english.trim() ||
                 !vietnamese.trim() ||
                 !example.trim() ||
+                checkers.length === 0 ||
                 isTranslating ||
                 isPending
               }
@@ -180,26 +198,10 @@ export function AddWordForm() {
                   Try: {usageResult.suggestion}
                 </p>
               ) : null}
-              {grammarIssues.length > 0 ? (
-                <Alert>
-                  <CircleAlertIcon />
-                  <AlertTitle>Grammar warnings</AlertTitle>
-                  <AlertDescription>
-                    These do not fail the check.{" "}
-                    <a href="https://languagetool.org">LanguageTool</a>
-                    <ul className="mt-2 list-disc pl-4">
-                      {grammarIssues.map((issue) => (
-                        <li key={issue.message}>{issue.message}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              ) : null}
-              {usageResult.grammarUnavailable ? (
-                <p className="text-sm text-muted-foreground">
-                  Grammar check was unavailable. Meaning was still graded.
-                </p>
-              ) : null}
+              <GrammarCheckSections
+                checks={usageResult.grammarChecks}
+                warningNote="These do not fail the check."
+              />
             </div>
           ) : null}
           {isBusy ? (
@@ -216,12 +218,11 @@ export function AddWordForm() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="text-xs text-muted-foreground">
-        Grammar suggestions by{" "}
-        <Link href="https://languagetool.org" className="underline">
-          LanguageTool
-        </Link>
-      </CardFooter>
+      {checkers.length > 0 ? (
+        <CardFooter className="text-xs text-muted-foreground">
+          <GrammarCheckerCredit checkers={checkers} />
+        </CardFooter>
+      ) : null}
     </Card>
   )
 }

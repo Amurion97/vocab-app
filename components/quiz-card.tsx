@@ -3,10 +3,14 @@
 import { useState, useTransition } from "react"
 import type { Word } from "@prisma/client"
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-import { parseIssues } from "@/lib/issues"
+import { parseIssues, reminderLabel, type GrammarChecker } from "@/lib/issues"
+import {
+  GrammarCheckSections,
+  GrammarCheckerCredit,
+  GrammarCheckerPicker,
+} from "@/components/grammar-checkers"
 import { UsageCheckActions } from "@/components/usage-check-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +31,7 @@ export function QuizCard({ word }: { word: Word }) {
   const router = useRouter()
   const reminders = parseIssues(word.issues)
   const [sentence, setSentence] = useState("")
+  const [checkers, setCheckers] = useState<GrammarChecker[]>([])
   const [isNavigating, setIsNavigating] = useState(false)
   const [, startTransition] = useTransition()
   const {
@@ -45,7 +50,10 @@ export function QuizCard({ word }: { word: Word }) {
     if (isChecking) {
       return
     }
-    check({ wordId: word.id, sentence })
+    if (checkers.length === 0) {
+      return
+    }
+    check({ wordId: word.id, sentence, checkers })
   }
 
   function onTryAgain() {
@@ -59,8 +67,6 @@ export function QuizCard({ word }: { word: Word }) {
       router.refresh()
     })
   }
-
-  const grammarIssues = result?.issues.filter((issue) => issue.source === "grammar") ?? []
 
   return (
     <Card>
@@ -89,10 +95,11 @@ export function QuizCard({ word }: { word: Word }) {
             <AlertTitle>Last time</AlertTitle>
             <AlertDescription>
               <ul className="list-disc pl-4">
-                {reminders.map((issue) => (
-                  <li key={`${issue.source}-${issue.message}`}>
-                    {issue.source === "meaning" ? "Meaning: " : "Grammar: "}
-                    {issue.message}
+                {reminders.map((issue, index) => (
+                  <li
+                    key={`${issue.source}-${issue.checker ?? ""}-${issue.message}-${index}`}
+                  >
+                    {reminderLabel(issue)}
                   </li>
                 ))}
               </ul>
@@ -118,26 +125,10 @@ export function QuizCard({ word }: { word: Word }) {
                 Try: {result.suggestion}
               </p>
             ) : null}
-            {grammarIssues.length > 0 ? (
-              <Alert>
-                <CircleAlertIcon />
-                <AlertTitle>Grammar warnings</AlertTitle>
-                <AlertDescription>
-                  These do not fail the quiz.{" "}
-                  <a href="https://languagetool.org">LanguageTool</a>
-                  <ul className="mt-2 list-disc pl-4">
-                    {grammarIssues.map((issue) => (
-                      <li key={issue.message}>{issue.message}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {result.grammarUnavailable ? (
-              <p className="text-sm text-muted-foreground">
-                Grammar check was unavailable. Meaning was still graded.
-              </p>
-            ) : null}
+            <GrammarCheckSections
+              checks={result.grammarChecks}
+              warningNote="These do not fail the quiz."
+            />
             {result.passed ? (
               <Button
                 type="button"
@@ -191,10 +182,18 @@ export function QuizCard({ word }: { word: Word }) {
             ) : error ? (
               <p className="text-sm text-destructive">{error}</p>
             ) : null}
+            <GrammarCheckerPicker
+              selected={checkers}
+              disabled={isChecking}
+              onChange={(next) => {
+                setCheckers(next)
+                reset()
+              }}
+            />
             <UsageCheckActions
               type="submit"
               variant="default"
-              startDisabled={!sentence.trim()}
+              startDisabled={!sentence.trim() || checkers.length === 0}
               isChecking={isChecking}
               canCancel={canCancel}
               onCancel={cancel}
@@ -202,12 +201,11 @@ export function QuizCard({ word }: { word: Word }) {
           </form>
         )}
       </CardContent>
-      <CardFooter className="text-xs text-muted-foreground">
-        Grammar suggestions by{" "}
-        <Link href="https://languagetool.org" className="underline">
-          LanguageTool
-        </Link>
-      </CardFooter>
+      {checkers.length > 0 ? (
+        <CardFooter className="text-xs text-muted-foreground">
+          <GrammarCheckerCredit checkers={checkers} />
+        </CardFooter>
+      ) : null}
     </Card>
   )
 }

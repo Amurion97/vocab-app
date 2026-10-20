@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react"
 
 import { type QuizResult } from "@/app/actions"
+import type { GrammarChecker } from "@/lib/issues"
 
 const CANCEL_AFTER_MS = 2000
 
@@ -38,7 +39,13 @@ export function useUsageCheck() {
     abortRef.current?.abort()
   }
 
-  function check(body: Record<string, string>) {
+  function check(body: {
+    sentence: string
+    checkers: GrammarChecker[]
+    wordId?: string
+    english?: string
+    vietnamese?: string
+  }) {
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
