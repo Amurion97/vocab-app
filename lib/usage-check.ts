@@ -1,7 +1,4 @@
-import {
-  isUsageCheckBusyError,
-  type UsageCheck,
-} from "@/lib/gemini-usage"
+import { isUsageCheckBusyError, type UsageCheck } from "@/lib/gemini-usage"
 import {
   parseCheckerSelection,
   type GrammarCheckSection,
@@ -10,9 +7,7 @@ import {
 } from "@/lib/issues"
 
 export type IssueUpdate =
-  | { kind: "preserve" }
-  | { kind: "clear" }
-  | { kind: "set"; issues: ReviewIssue[] }
+  { kind: "clear" } | { kind: "set"; issues: ReviewIssue[] }
 
 export type UsageCheckDeps = {
   checkMeaning: (params: {
@@ -51,12 +46,9 @@ function json(body: unknown, status: number) {
 
 function decideIssueUpdate(
   passed: boolean,
-  issues: ReviewIssue[],
-  grammarChecks: GrammarCheckSection[]
+  issues: ReviewIssue[]
 ): IssueUpdate {
   const passedWithoutIssues = passed && issues.length === 0
-  const checkerDown = grammarChecks.some((check) => !check.available)
-  if (passedWithoutIssues && checkerDown) return { kind: "preserve" }
   if (passedWithoutIssues) return { kind: "clear" }
   return { kind: "set", issues }
 }
@@ -141,11 +133,7 @@ export async function handleUsageCheck(request: Request, deps: UsageCheckDeps) {
       wordId: persistWordId,
       sentence: trimmed,
       passed: graded.grade.passed,
-      issueUpdate: decideIssueUpdate(
-        graded.grade.passed,
-        graded.grade.issues,
-        graded.grade.grammarChecks
-      ),
+      issueUpdate: decideIssueUpdate(graded.grade.passed, graded.grade.issues),
     })
     deps.revalidateHome()
   }
@@ -200,17 +188,19 @@ async function gradeUsage(
   }
 
   const usage = usageResult.value
-  const grammarChecks: GrammarCheckSection[] = checkers.map((checker, index) => {
-    const result = checkerResults[index]
-    if (!result || result.status === "rejected") {
-      return { checker, available: false, suggestions: [] }
+  const grammarChecks: GrammarCheckSection[] = checkers.map(
+    (checker, index) => {
+      const result = checkerResults[index]
+      if (!result || result.status === "rejected") {
+        return { checker, available: false, suggestions: [] }
+      }
+      return {
+        checker,
+        available: true,
+        suggestions: result.value.map((match) => match.message),
+      }
     }
-    return {
-      checker,
-      available: true,
-      suggestions: result.value.map((match) => match.message),
-    }
-  })
+  )
   const passed = usage.usedCorrectly
   const issues: ReviewIssue[] = []
 

@@ -10,11 +10,12 @@ import {
   type IssueUpdate,
   type UsageCheckDeps,
 } from "@/lib/usage-check"
+import { exhaustiveCheck } from "@/lib/exhaustive-check"
 
 function issueUpdateToPrismaData(issueUpdate: IssueUpdate) {
-  if (issueUpdate.kind === "preserve") return {}
   if (issueUpdate.kind === "clear") return { issues: [] }
-  return { issues: issueUpdate.issues }
+  if (issueUpdate.kind === "set") return { issues: issueUpdate.issues }
+  return exhaustiveCheck(issueUpdate as never, "issueUpdate.kind is not listed")
 }
 
 const deps: UsageCheckDeps = {
