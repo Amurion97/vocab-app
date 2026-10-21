@@ -100,8 +100,8 @@ export function AddWordForm() {
       <CardHeader>
         <CardTitle>Add a word</CardTitle>
         <CardDescription>
-          Type an English word, translate it to Vietnamese, then optionally check
-          an example sentence before you save it.
+          Type an English word, translate it to Vietnamese, then optionally
+          check an example sentence before you save it.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -134,7 +134,6 @@ export function AddWordForm() {
             <Label htmlFor="vietnamese">Vietnamese</Label>
             <Input
               id="vietnamese"
-              className="font-vietnamese"
               lang="vi"
               value={vietnamese}
               disabled={fieldsLocked}

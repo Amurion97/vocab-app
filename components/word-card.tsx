@@ -64,7 +64,7 @@ export function WordCard({ word }: { word: Word }) {
     <Card>
       <CardHeader>
         <CardTitle>{word.english}</CardTitle>
-        <CardDescription className="font-vietnamese">{word.vietnamese}</CardDescription>
+        <CardDescription>{word.vietnamese}</CardDescription>
         <CardAction className="flex gap-1">
           <Button
             type="button"
@@ -166,9 +166,7 @@ export function WordCard({ word }: { word: Word }) {
                 onChange={(event) => setExample(event.target.value)}
               />
             </div>
-            {error ? (
-              <p className="text-sm text-destructive">{error}</p>
-            ) : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button type="button" disabled={isPending} onClick={onSave}>
               {isPending ? "Saving…" : "Save changes"}
             </Button>

@@ -34,16 +34,8 @@ export function QuizCard({ word }: { word: Word }) {
   const [checkers, setCheckers] = useState<GrammarChecker[]>([])
   const [isNavigating, setIsNavigating] = useState(false)
   const [, startTransition] = useTransition()
-  const {
-    result,
-    error,
-    isBusy,
-    isChecking,
-    canCancel,
-    check,
-    cancel,
-    reset,
-  } = useUsageCheck()
+  const { result, error, isBusy, isChecking, canCancel, check, cancel, reset } =
+    useUsageCheck()
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -72,9 +64,7 @@ export function QuizCard({ word }: { word: Word }) {
     <Card>
       <CardHeader>
         <CardTitle>{word.english}</CardTitle>
-        <CardDescription>
-          Vietnamese meaning: <span className="font-vietnamese">{word.vietnamese}</span>
-        </CardDescription>
+        <CardDescription>Vietnamese meaning: {word.vietnamese}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-1.5">
@@ -110,11 +100,13 @@ export function QuizCard({ word }: { word: Word }) {
           <div className="flex flex-col gap-3">
             <Alert variant={result.passed ? "default" : "destructive"}>
               {result.passed ? <CircleCheckIcon /> : <CircleAlertIcon />}
-              <AlertTitle>
-                {result.passed ? "Passed" : "Try again"}
-              </AlertTitle>
+              <AlertTitle>{result.passed ? "Passed" : "Try again"}</AlertTitle>
               <AlertDescription>
-                <p className="text-foreground">You wrote:<br/>&quot;{sentence.trim()}&quot;</p>
+                <p className="text-foreground">
+                  You wrote:
+                  <br />
+                  &quot;{sentence.trim()}&quot;
+                </p>
                 <p>{result.feedback}</p>
               </AlertDescription>
             </Alert>
@@ -133,11 +125,7 @@ export function QuizCard({ word }: { word: Word }) {
               warningNote="These do not fail the quiz."
             />
             {result.passed ? (
-              <Button
-                type="button"
-                onClick={onNext}
-                disabled={isNavigating}
-              >
+              <Button type="button" onClick={onNext} disabled={isNavigating}>
                 {isNavigating ? "Loading…" : "Next word"}
               </Button>
             ) : (
