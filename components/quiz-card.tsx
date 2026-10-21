@@ -73,7 +73,7 @@ export function QuizCard({ word }: { word: Word }) {
       <CardHeader>
         <CardTitle>{word.english}</CardTitle>
         <CardDescription>
-          Vietnamese meaning: {word.vietnamese}
+          Vietnamese meaning: <span className="font-vietnamese">{word.vietnamese}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

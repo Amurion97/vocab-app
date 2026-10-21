@@ -134,6 +134,8 @@ export function AddWordForm() {
             <Label htmlFor="vietnamese">Vietnamese</Label>
             <Input
               id="vietnamese"
+              className="font-vietnamese"
+              lang="vi"
               value={vietnamese}
               disabled={fieldsLocked}
               onChange={(event) => {

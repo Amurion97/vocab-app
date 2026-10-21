@@ -64,7 +64,7 @@ export function WordCard({ word }: { word: Word }) {
     <Card>
       <CardHeader>
         <CardTitle>{word.english}</CardTitle>
-        <CardDescription>{word.vietnamese}</CardDescription>
+        <CardDescription className="font-vietnamese">{word.vietnamese}</CardDescription>
         <CardAction className="flex gap-1">
           <Button
             type="button"
