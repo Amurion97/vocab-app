@@ -7,8 +7,7 @@ type MyMemoryResponse = {
 }
 
 export type TranslateWordResult =
-  | { ok: true; vietnamese: string }
-  | { ok: false; error: string }
+  { ok: true; vietnamese: string } | { ok: false; error: string }
 
 export async function translateEnglishToVietnamese(
   text: string

@@ -97,11 +97,7 @@ export function GrammarCheckerCredit({
       Grammar suggestions by{" "}
       {checkers.map((checker, index) => (
         <span key={checker}>
-          {index === 0
-            ? null
-            : index === checkers.length - 1
-              ? " and "
-              : ", "}
+          {index === 0 ? null : index === checkers.length - 1 ? " and " : ", "}
           <Link href={CHECKER_LINKS[checker]} className="underline">
             {checker}
           </Link>

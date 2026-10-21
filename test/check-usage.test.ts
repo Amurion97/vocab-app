@@ -3,10 +3,7 @@ import test from "node:test"
 
 import type { UsageCheck } from "../lib/gemini-usage"
 import { parseIssues } from "../lib/issues"
-import {
-  handleUsageCheck,
-  type UsageCheckDeps,
-} from "../lib/usage-check"
+import { handleUsageCheck, type UsageCheckDeps } from "../lib/usage-check"
 
 const passedMeaning: UsageCheck = {
   wordPresent: true,
@@ -397,9 +394,7 @@ test("a selected checker with no suggestions still has a section", async () => {
     feedback: "Used with the right meaning.",
     suggestion: null,
     issues: [],
-    grammarChecks: [
-      { checker: "Sapling", available: true, suggestions: [] },
-    ],
+    grammarChecks: [{ checker: "Sapling", available: true, suggestions: [] }],
   })
 })
 

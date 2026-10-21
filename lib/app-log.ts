@@ -10,7 +10,11 @@ function serializeError(error: unknown) {
   }
 
   if (typeof error === "object" && error !== null) {
-    const record = error as { name?: unknown; message?: unknown; code?: unknown }
+    const record = error as {
+      name?: unknown
+      message?: unknown
+      code?: unknown
+    }
     return {
       errorType: typeof record.name === "string" ? record.name : undefined,
       errorMessage:

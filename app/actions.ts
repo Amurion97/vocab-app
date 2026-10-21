@@ -8,13 +8,10 @@ import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
 import { translateEnglishToVietnamese } from "@/lib/mymemory"
 import { prisma } from "@/lib/prisma"
 
-export type ActionResult =
-  | { ok: true }
-  | { ok: false; error: string }
+export type ActionResult = { ok: true } | { ok: false; error: string }
 
 export type TranslateResult =
-  | { ok: true; vietnamese: string }
-  | { ok: false; error: string }
+  { ok: true; vietnamese: string } | { ok: false; error: string }
 
 export type QuizResult =
   | {
@@ -138,4 +135,3 @@ export async function deleteWord(id: string): Promise<ActionResult> {
   revalidatePath("/review")
   return { ok: true }
 }
-

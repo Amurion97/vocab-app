@@ -73,7 +73,11 @@ export function useUsageCheck() {
         if (controller.signal.aborted) {
           return
         }
-        if (!nextResult || typeof nextResult !== "object" || !("ok" in nextResult)) {
+        if (
+          !nextResult ||
+          typeof nextResult !== "object" ||
+          !("ok" in nextResult)
+        ) {
           setError("Could not check usage.")
           return
         }

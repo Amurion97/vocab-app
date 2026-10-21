@@ -9,12 +9,12 @@
  */
 export const exhaustiveCheck = (x: never, errorMsg?: string) => {
   if (errorMsg) {
-    throw new Error(errorMsg);
+    throw new Error(errorMsg)
   }
-  throw new Error("Unhandled case: " + x);
-};
+  throw new Error("Unhandled case: " + x)
+}
 
 /**
  * @augments exhaustiveCheck
  */
-export const assertUnreachable = exhaustiveCheck;
+export const assertUnreachable = exhaustiveCheck

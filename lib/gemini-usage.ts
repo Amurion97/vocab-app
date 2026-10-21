@@ -129,7 +129,10 @@ function isRetryableCapacityFailure(error: unknown) {
   if (isTimeout(error)) {
     return false
   }
-  if (error instanceof ApiError && (error.status === 429 || error.status === 503)) {
+  if (
+    error instanceof ApiError &&
+    (error.status === 429 || error.status === 503)
+  ) {
     return true
   }
   const raw = error instanceof Error ? error.message : String(error)
