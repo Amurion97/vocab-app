@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { ThemeToggle } from "@/components/theme-toggle"
 import { buttonVariants } from "@/components/ui/button"
 
 export function SiteHeader() {
@@ -14,26 +15,29 @@ export function SiteHeader() {
         <Link href="/" className="font-heading text-sm font-medium">
           Vocab
         </Link>
-        <nav className="flex items-center gap-1">
-          <Link
-            href="/"
-            className={buttonVariants({
-              variant: pathname === "/" ? "default" : "ghost",
-              size: "sm",
-            })}
-          >
-            Words
-          </Link>
-          <Link
-            href="/review"
-            className={buttonVariants({
-              variant: pathname === "/review" ? "default" : "ghost",
-              size: "sm",
-            })}
-          >
-            Review
-          </Link>
-        </nav>
+        <div className="flex items-center gap-1">
+          <nav className="flex items-center gap-1">
+            <Link
+              href="/"
+              className={buttonVariants({
+                variant: pathname === "/" ? "default" : "ghost",
+                size: "sm",
+              })}
+            >
+              Words
+            </Link>
+            <Link
+              href="/review"
+              className={buttonVariants({
+                variant: pathname === "/review" ? "default" : "ghost",
+                size: "sm",
+              })}
+            >
+              Review
+            </Link>
+          </nav>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )
