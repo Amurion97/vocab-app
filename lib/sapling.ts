@@ -1,3 +1,9 @@
+import {
+  isRangeWithin,
+  type GrammarHighlight,
+  type GrammarQuote,
+  type GrammarSuggestion,
+} from "@/lib/issues"
 import type { GrammarMatch } from "@/lib/languagetool"
 
 type SaplingEdit = {
@@ -5,6 +11,10 @@ type SaplingEdit = {
   end?: number
   replacement?: string
   description?: string
+  sentence?: string
+  sentence_start?: number
+  error_type?: string
+  general_error_type?: string
 }
 
 type SaplingResponse = {
@@ -22,6 +32,34 @@ function saplingApiKey() {
     (raw.startsWith("'") && raw.endsWith("'"))
   const unquoted = wrapped ? raw.slice(1, -1) : raw.replace(/^["']/, "")
   return unquoted.trim() || undefined
+}
+
+function contextOf(
+  text: string,
+  edit: SaplingEdit,
+  word: string,
+  base: string
+) {
+  const rawSentence = edit.sentence
+  const rawContext = rawSentence?.trim() ? rawSentence : text
+  const context = rawContext.trim()
+  const quote: GrammarQuote = { base, word, context }
+  if (typeof edit.start !== "number" || typeof edit.end !== "number" || !word) {
+    return quote
+  }
+  const raw = text.slice(edit.start, edit.end)
+  const leading = raw.length - raw.trimStart().length
+  const contextLeading = rawContext.length - rawContext.trimStart().length
+  const offset =
+    edit.start + leading - (edit.sentence_start ?? 0) - contextLeading
+  const highlight: GrammarHighlight = { offset, length: word.length }
+  if (
+    isRangeWithin(context, offset, word.length) &&
+    context.startsWith(word, offset)
+  ) {
+    quote.highlight = highlight
+  }
+  return quote
 }
 
 export async function checkSapling(text: string): Promise<GrammarMatch[]> {
@@ -49,8 +87,12 @@ export async function checkSapling(text: string): Promise<GrammarMatch[]> {
 
   const data = (await response.json()) as SaplingResponse
   const matches: GrammarMatch[] = []
+  const edits = Array.isArray(data?.edits) ? data.edits : []
 
-  for (const edit of data.edits ?? []) {
+  for (const edit of edits) {
+    if (!edit || typeof edit !== "object") {
+      continue
+    }
     const replacement = edit.replacement?.trim() ?? ""
     const original =
       typeof edit.start === "number" && typeof edit.end === "number"
@@ -61,9 +103,27 @@ export async function checkSapling(text: string): Promise<GrammarMatch[]> {
     }
     const change = original ? `${original} → ${replacement}` : replacement
     const description = edit.description?.trim()
-    matches.push({
-      message: description ? `${description} ${change}` : change,
-    })
+    const message = description ? `${description} ${change}` : change
+    const suggestion: GrammarSuggestion = { message }
+    if (original) {
+      suggestion.quote = contextOf(
+        text,
+        edit,
+        original,
+        description || "Suggested edit:"
+      )
+      const quote = suggestion.quote
+      if (quote.highlight) {
+        const at = description ? description.length + 1 : 0
+        if (message.startsWith(original, at)) {
+          suggestion.highlight = { offset: at, length: original.length }
+        }
+      }
+    }
+    if (replacement) {
+      suggestion.replacements = [replacement]
+    }
+    matches.push(suggestion)
   }
 
   return matches
