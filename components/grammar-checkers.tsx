@@ -8,6 +8,7 @@ import {
   GRAMMAR_CHECKERS,
   type GrammarCheckSection,
   type GrammarChecker,
+  type GrammarSuggestion,
 } from "@/lib/issues"
 
 const CHECKER_LINKS: Record<GrammarChecker, string> = {
@@ -50,6 +51,68 @@ export function GrammarCheckerPicker({
   )
 }
 
+function HighlightedMessage({
+  message,
+  highlight,
+}: {
+  message: string
+  highlight: GrammarSuggestion["highlight"]
+}) {
+  if (!highlight) {
+    return message
+  }
+
+  const end = highlight.offset + highlight.length
+  return (
+    <>
+      {message.slice(0, highlight.offset)}
+      <mark className="rounded-sm bg-foreground/10 px-0.5 font-medium text-foreground">
+        {message.slice(highlight.offset, end)}
+      </mark>
+      {message.slice(end)}
+    </>
+  )
+}
+
+function SuggestionText({ suggestion }: { suggestion: GrammarSuggestion }) {
+  const { quote, replacements = [] } = suggestion
+  return (
+    <div className="space-y-1">
+      <p>
+        {quote ? (
+          <>
+            {quote.base}{" "}
+            <span className="font-medium text-foreground">{quote.word}</span>
+          </>
+        ) : (
+          <HighlightedMessage
+            message={suggestion.message}
+            highlight={suggestion.highlight}
+          />
+        )}
+      </p>
+
+      {quote?.context ? (
+        <p className="border-l-2 border-border pl-3 leading-relaxed">
+          <HighlightedMessage
+            message={quote.context}
+            highlight={quote.highlight}
+          />
+        </p>
+      ) : null}
+
+      {replacements.length > 0 ? (
+        <p>
+          <span className="text-xs tracking-wide uppercase">Try</span>{" "}
+          <span className="font-medium text-foreground">
+            {replacements.join(", ")}
+          </span>
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 export function GrammarCheckSections({
   checks,
   warningNote,
@@ -66,9 +129,14 @@ export function GrammarCheckSections({
           check.suggestions.length > 0 ? (
             <>
               {warningNote}
-              <ul className="mt-2 list-disc pl-4">
+              <ul className="mt-2 divide-y divide-border">
                 {check.suggestions.map((suggestion, index) => (
-                  <li key={`${suggestion}-${index}`}>{suggestion}</li>
+                  <li
+                    key={`${suggestion.message}-${index}`}
+                    className="py-2 first:pt-0 last:pb-0"
+                  >
+                    <SuggestionText suggestion={suggestion} />
+                  </li>
                 ))}
               </ul>
             </>

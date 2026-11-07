@@ -113,7 +113,7 @@ test("LanguageTool only returns that checker's warning", async () => {
       {
         checker: "LanguageTool",
         available: true,
-        suggestions: ["Use makes."],
+        suggestions: [{ message: "Use makes." }],
       },
     ],
   })
@@ -153,7 +153,7 @@ test("Sapling only returns that checker's warning", async () => {
       {
         checker: "Sapling",
         available: true,
-        suggestions: ["make → makes"],
+        suggestions: [{ message: "make → makes" }],
       },
     ],
   })
@@ -200,12 +200,12 @@ test("both checkers keep separate sections for the same warning", async () => {
       {
         checker: "LanguageTool",
         available: true,
-        suggestions: ["Use makes."],
+        suggestions: [{ message: "Use makes." }],
       },
       {
         checker: "Sapling",
         available: true,
-        suggestions: ["Use makes."],
+        suggestions: [{ message: "Use makes." }],
       },
     ],
   })
@@ -242,7 +242,7 @@ test("one rejected checker leaves the other checker's warning", async () => {
     {
       checker: "Sapling",
       available: true,
-      suggestions: ["make → makes"],
+      suggestions: [{ message: "make → makes" }],
     },
   ])
 })
@@ -340,7 +340,7 @@ test("a grammar warning leaves a failed Meaning check failed", async () => {
       {
         checker: "LanguageTool",
         available: true,
-        suggestions: ["Use makes."],
+        suggestions: [{ message: "Use makes." }],
       },
     ],
   })

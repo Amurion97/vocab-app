@@ -2,11 +2,48 @@ export const GRAMMAR_CHECKERS = ["LanguageTool", "Sapling"] as const
 
 export type GrammarChecker = (typeof GRAMMAR_CHECKERS)[number]
 
+// offset and length index the reminder message, not the learner's sentence.
+export type GrammarHighlight = {
+  offset: number
+  length: number
+}
+
+// The parts message was assembled from, so the UI can lay them out as
+// separate lines instead of re-splitting the joined string.
+export type GrammarQuote = {
+  base: string
+  word: string
+  context?: string
+  highlight?: GrammarHighlight
+}
+
+export type GrammarSuggestion = {
+  message: string
+  highlight?: GrammarHighlight
+  quote?: GrammarQuote
+  replacements?: string[]
+}
+
 export type ReviewIssue = {
   source: "meaning" | "grammar"
   severity: "error" | "warning"
   message: string
   checker?: GrammarChecker
+  highlight?: GrammarHighlight
+}
+
+export function isRangeWithin(
+  text: string,
+  offset: unknown,
+  length: unknown
+): boolean {
+  if (typeof offset !== "number" || typeof length !== "number") {
+    return false
+  }
+  if (!Number.isInteger(offset) || !Number.isInteger(length)) {
+    return false
+  }
+  return offset >= 0 && length > 0 && offset <= text.length - length
 }
 
 export function parseCheckerSelection(value: unknown): GrammarChecker[] | null {
@@ -30,7 +67,7 @@ export function parseCheckerSelection(value: unknown): GrammarChecker[] | null {
 export type GrammarCheckSection = {
   checker: GrammarChecker
   available: boolean
-  suggestions: string[]
+  suggestions: GrammarSuggestion[]
 }
 
 export function parseIssues(value: unknown): ReviewIssue[] {
@@ -69,7 +106,25 @@ function readIssue(value: unknown): ReviewIssue | null {
   ) {
     parsed.checker = issue.checker
   }
+  const highlight = readHighlight(issue.highlight, parsed.message)
+  if (highlight) {
+    parsed.highlight = highlight
+  }
   return parsed
+}
+
+function readHighlight(
+  value: unknown,
+  message: string
+): GrammarHighlight | null {
+  if (!value || typeof value !== "object") {
+    return null
+  }
+  const { offset, length } = value as Partial<GrammarHighlight>
+  if (!isRangeWithin(message, offset, length)) {
+    return null
+  }
+  return { offset: offset as number, length: length as number }
 }
 
 export function reminderLabel(issue: ReviewIssue): string {

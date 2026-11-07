@@ -197,7 +197,7 @@ async function gradeUsage(
       return {
         checker,
         available: true,
-        suggestions: result.value.map((match) => match.message),
+        suggestions: result.value,
       }
     }
   )
@@ -216,12 +216,13 @@ async function gradeUsage(
     if (!check.available) {
       continue
     }
-    for (const message of check.suggestions) {
+    for (const suggestion of check.suggestions) {
       issues.push({
         source: "grammar",
         severity: "warning",
-        message,
+        message: suggestion.message,
         checker: check.checker,
+        ...(suggestion.highlight ? { highlight: suggestion.highlight } : {}),
       })
     }
   }
