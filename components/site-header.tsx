@@ -15,7 +15,7 @@ export function SiteHeader() {
         <Link href="/" className="font-heading text-sm font-medium">
           Vocab
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <nav className="flex items-center gap-1">
             <Link
               href="/"

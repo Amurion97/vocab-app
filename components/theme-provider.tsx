@@ -34,8 +34,45 @@ function isTypingTarget(target: EventTarget | null) {
   )
 }
 
+function nextTheme(theme: string | undefined) {
+  if (theme === "light") {
+    return "dark"
+  }
+
+  if (theme === "dark") {
+    return "system"
+  }
+
+  return "light"
+}
+
+function themeAnnouncement(theme: string) {
+  if (theme === "dark") {
+    return "Dark theme"
+  }
+
+  if (theme === "system") {
+    return "System theme"
+  }
+
+  return "Light theme"
+}
+
+function isMenuTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  return Boolean(
+    target.closest(
+      "[role='menu'], [role='menuitem'], [role='menuitemradio'], [role='menuitemcheckbox']"
+    )
+  )
+}
+
 function ThemeHotkey() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
+  const [announcement, setAnnouncement] = React.useState("")
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -51,11 +88,15 @@ function ThemeHotkey() {
         return
       }
 
-      if (isTypingTarget(event.target)) {
+      // D cycles Light → Dark → System. Skip it inside the open menu so
+      // letter navigation can still reach the Dark item.
+      if (isTypingTarget(event.target) || isMenuTarget(event.target)) {
         return
       }
 
-      setTheme(resolvedTheme === "dark" ? "light" : "dark")
+      const next = nextTheme(theme)
+      setTheme(next)
+      setAnnouncement(themeAnnouncement(next))
     }
 
     window.addEventListener("keydown", onKeyDown)
@@ -63,9 +104,13 @@ function ThemeHotkey() {
     return () => {
       window.removeEventListener("keydown", onKeyDown)
     }
-  }, [resolvedTheme, setTheme])
+  }, [theme, setTheme])
 
-  return null
+  return (
+    <span className="sr-only" aria-live="polite">
+      {announcement}
+    </span>
+  )
 }
 
 export { ThemeProvider }
