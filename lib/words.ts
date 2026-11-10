@@ -9,8 +9,25 @@ export async function getWords() {
   })
 }
 
-export async function getNextReviewWord(excludeId?: string) {
+export async function getWordById(id: string) {
+  return prisma.word.findUnique({
+    where: { id },
+  })
+}
+
+export async function getNextReviewWord(
+  excludeId?: string,
+  requestedId?: string
+) {
   const words = await prisma.word.findMany()
+
+  if (requestedId) {
+    const requested = words.find((word) => word.id === requestedId)
+    if (requested) {
+      return requested
+    }
+  }
+
   const pool = excludeId ? words.filter((word) => word.id !== excludeId) : words
 
   if (pool.length === 0) {

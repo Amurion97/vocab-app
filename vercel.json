@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "schedules": {
+    "daily-nudge": {
+      "schedule": "0 20 * * *",
+      "timezone": "Asia/Ho_Chi_Minh",
+      "path": "/api/nudge"
+    }
+  }
+}

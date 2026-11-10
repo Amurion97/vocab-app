@@ -10,7 +10,9 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "with-env": "dotenv -e .env.local -e .env --",
     "test": "node --experimental-strip-types --import ./test/register.mjs --test test/*.test.ts",
+    "send-email-test": "node --experimental-strip-types --import ./test/register.mjs --test test/nudge-email.e2e.ts",
     "postinstall": "prisma generate",
     "db:push": "prisma db push"
   },
@@ -33,6 +35,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "prettier": "^3.8.3",
