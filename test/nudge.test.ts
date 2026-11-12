@@ -26,11 +26,15 @@ const sampleWord: NudgeWord = {
   vietnamese: "có ở khắp nơi",
 }
 
-function makeDeps(
-  overrides: Partial<DecideNudgeDeps> = {}
-): {
+function makeDeps(overrides: Partial<DecideNudgeDeps> = {}): {
   deps: DecideNudgeDeps
-  sent: { to: string; from: string; subject: string; html: string; text: string }[]
+  sent: {
+    to: string
+    from: string
+    subject: string
+    html: string
+    text: string
+  }[]
 } {
   const sent: {
     to: string

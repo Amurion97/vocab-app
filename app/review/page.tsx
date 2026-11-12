@@ -24,7 +24,11 @@ export default async function ReviewPage({
         </p>
       </div>
       {word ? (
-        requestedId && practisedToday({ lastReviewedAt: word.lastReviewedAt, now: new Date() }) ? (
+        requestedId &&
+        practisedToday({
+          lastReviewedAt: word.lastReviewedAt,
+          now: new Date(),
+        }) ? (
           <ReviewCongrats key={word.id} word={word} />
         ) : (
           <QuizCard key={word.id} word={word} />

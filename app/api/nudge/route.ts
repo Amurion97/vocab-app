@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
   const token = auth?.startsWith("Bearer ") ? auth.slice("Bearer ".length) : ""
 
   if (!timingSafeEqual(token, expected)) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 })
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized." },
+      { status: 401 }
+    )
   }
 
   try {
@@ -64,7 +67,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, ...result })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not send nudge."
+    const message =
+      error instanceof Error ? error.message : "Could not send nudge."
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }
