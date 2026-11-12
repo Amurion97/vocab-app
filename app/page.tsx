@@ -1,10 +1,23 @@
 import { AddWordForm } from "@/components/add-word-form"
-import { WordCard } from "@/components/word-card"
-import { getWords } from "@/lib/words"
+import { getPaginatedWords } from "@/lib/words"
+import { Suspense } from "react"
+import { InfiniteWordList } from "@/components/infinite-word-list"
+import { WordCardSkeleton } from "@/components/word-card"
+
+async function SavedWordList() {
+  const { words, nextCursor } = await getPaginatedWords(10)
+  if (words.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No words yet. Add one above to start reviewing.
+      </p>
+    )
+  }
+
+  return <InfiniteWordList initialWords={words} initialCursor={nextCursor} />
+}
 
 export default async function HomePage() {
-  const words = await getWords()
-
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -16,16 +29,20 @@ export default async function HomePage() {
       </div>
       <AddWordForm />
       <section className="flex flex-col gap-3">
-        <h2 className="font-heading text-lg font-medium">
-          Saved words ({words.length})
-        </h2>
-        {words.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No words yet. Add one above to start reviewing.
-          </p>
-        ) : (
-          words.map((word) => <WordCard key={word.id} word={word} />)
-        )}
+        <h2 className="font-heading text-lg font-medium">Saved words</h2>
+        {/*Since the words are fetched server side, we don't need to check the pending state here*/}
+
+        <Suspense
+          fallback={
+            <div className="flex flex-col gap-3">
+              <WordCardSkeleton />
+              <WordCardSkeleton />
+              <WordCardSkeleton />
+            </div>
+          }
+        >
+          <SavedWordList />
+        </Suspense>
       </section>
     </div>
   )

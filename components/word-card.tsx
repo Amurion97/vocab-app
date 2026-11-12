@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 
 export function WordCard({ word }: { word: Word }) {
@@ -172,6 +173,36 @@ export function WordCard({ word }: { word: Word }) {
             </Button>
           </div>
         ) : null}
+      </CardContent>
+    </Card>
+  )
+}
+
+export function WordCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <Skeleton className="h-5 w-24" />
+        </CardTitle>
+        <CardDescription>
+          <Skeleton className="h-4 w-16" />
+        </CardDescription>
+        <CardAction className="flex gap-1">
+          <Skeleton className="h-7 w-7 rounded-md" />
+          <Skeleton className="h-7 w-7 rounded-md" />
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex flex-wrap gap-1.5">
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <div className="flex flex-col gap-2 pt-1">
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
       </CardContent>
     </Card>
   )

@@ -9,6 +9,31 @@ export async function getWords() {
   })
 }
 
+export async function getPaginatedWords(limit = 10, cursor?: string) {
+  const words = await prisma.word.findMany({
+    take: limit,
+    ...(cursor
+      ? {
+          skip: 1, // skip the cursor word
+          cursor: {
+            id: cursor,
+          },
+        }
+      : {}),
+    orderBy: { createdAt: "desc" },
+  })
+  // if the number of words returned is less than the limit, there are no more words to fetch
+  const nextCursor: string | null =
+    words.length === limit ? words[limit - 1].id : null
+
+  // artificially delay response
+  await new Promise((resolve) => setTimeout(resolve, 2000))
+  return {
+    words,
+    nextCursor,
+  }
+}
+
 export async function getWordById(id: string) {
   return prisma.word.findUnique({
     where: { id },

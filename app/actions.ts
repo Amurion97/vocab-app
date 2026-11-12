@@ -7,6 +7,7 @@ import { isUniqueConstraint } from "@/lib/db-error"
 import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
 import { translateEnglishToVietnamese } from "@/lib/mymemory"
 import { prisma } from "@/lib/prisma"
+import { getPaginatedWords } from "@/lib/words"
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
 
@@ -86,6 +87,16 @@ export async function createWord(input: {
   revalidatePath("/")
   revalidatePath("/review")
   return { ok: true }
+}
+
+export async function fetchMoreWords(limit: number, cursor?: string) {
+  try {
+    const result = await getPaginatedWords(limit, cursor)
+    return { ok: true as const, ...result }
+  } catch (error) {
+    console.error("Failed to fetch more words:", error)
+    return { ok: false as const, error: "Failed to load more words." }
+  }
 }
 
 export async function updateWord(
