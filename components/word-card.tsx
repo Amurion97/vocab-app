@@ -62,11 +62,11 @@ export function WordCard({ word }: { word: Word }) {
   }
 
   return (
-    <Card>
+    <Card className="group">
       <CardHeader>
         <CardTitle>{word.english}</CardTitle>
         <CardDescription>{word.vietnamese}</CardDescription>
-        <CardAction className="flex gap-1">
+        <CardAction className="flex gap-1 opacity-100 transition-opacity group-hover:opacity-100 md:opacity-0">
           <Button
             type="button"
             variant="ghost"

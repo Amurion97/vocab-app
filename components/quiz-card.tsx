@@ -129,11 +129,15 @@ export function QuizCard({ word }: { word: Word }) {
                 {isNavigating ? "Loading…" : "Next word"}
               </Button>
             ) : (
-              <div className="flex flex-col gap-2">
+              // <div className="flex flex-col gap-2 md:flex-row">
+              // using flex requires manual content fill (flex-1) for each item
+              // while using grid removes this because it because grid put layout first
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button
                   type="button"
                   onClick={onTryAgain}
                   disabled={isNavigating}
+                  // className="md:flex-1"
                 >
                   Try again
                 </Button>
@@ -142,6 +146,7 @@ export function QuizCard({ word }: { word: Word }) {
                   variant="outline"
                   onClick={onNext}
                   disabled={isNavigating}
+                  // className="md:flex-1"
                 >
                   {isNavigating ? "Loading…" : "Next word"}
                 </Button>
