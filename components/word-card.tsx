@@ -1,5 +1,6 @@
 "use client"
 
+import "@/components/wdyr"
 import { useState, useTransition } from "react"
 import type { Word } from "@prisma/client"
 import { CircleAlertIcon, PencilIcon, Trash2Icon } from "lucide-react"
@@ -177,6 +178,8 @@ export function WordCard({ word }: { word: Word }) {
     </Card>
   )
 }
+
+WordCard.whyDidYouRender = true
 
 export function WordCardSkeleton() {
   return (

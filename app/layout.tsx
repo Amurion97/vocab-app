@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro, Geist_Mono } from "next/font/google"
 
 import { SiteHeader } from "@/components/site-header"
 import { ThemeProvider } from "@/components/theme-provider"
+import { WhyDidYouRenderInit } from "@/components/wdyr"
 import { cn } from "@/lib/utils"
 
 import "./globals.css"
@@ -40,6 +41,7 @@ export default function RootLayout({
       )}
     >
       <body>
+        <WhyDidYouRenderInit />
         <ThemeProvider>
           <SiteHeader />
           <main className="mx-auto w-full max-w-3xl px-4 py-6">{children}</main>

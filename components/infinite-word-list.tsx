@@ -1,5 +1,6 @@
 "use client"
 
+import "@/components/wdyr"
 import { useEffect, useRef, useState, useTransition } from "react"
 import type { Word } from "@prisma/client"
 import { WordCard, WordCardSkeleton } from "@/components/word-card"
@@ -71,3 +72,5 @@ export function InfiniteWordList({
     </div>
   )
 }
+
+InfiniteWordList.whyDidYouRender = true

@@ -35,6 +35,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@welldone-software/why-did-you-render": "^10.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "dotenv-cli": "^11.1.0",
     "eslint": "^9",
