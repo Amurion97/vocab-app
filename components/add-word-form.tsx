@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useUsageCheck } from "@/hooks/use-usage-check"
 import type { GrammarChecker } from "@/lib/issues"
+import { useAddedWordsStore } from "@/stores/added-words"
 
 export function AddWordForm() {
   const [english, setEnglish] = useState("")
@@ -44,6 +45,8 @@ export function AddWordForm() {
     cancel,
     reset,
   } = useUsageCheck()
+
+  const { addWord } = useAddedWordsStore()
 
   const fieldsLocked = isChecking
 
@@ -85,6 +88,7 @@ export function AddWordForm() {
         setFormError(result.error)
         return
       }
+      addWord(result.word)
       setEnglish("")
       setVietnamese("")
       setExample("")

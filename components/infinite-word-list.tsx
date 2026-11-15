@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react"
 import type { Word } from "@prisma/client"
 import { WordCard, WordCardSkeleton } from "@/components/word-card"
 import { fetchMoreWords } from "@/app/actions"
+import { useAddedWordsStore } from "@/stores/added-words"
 
 interface InfiniteWordListProps {
   initialWords: Word[]
@@ -18,6 +19,8 @@ export function InfiniteWordList({
   const [words, setWords] = useState<Word[]>(initialWords)
   const [cursor, setCursor] = useState<string | null>(initialCursor ?? null)
   const [isPending, startTransition] = useTransition()
+
+  const { addedWords, removeWords } = useAddedWordsStore()
 
   // Sentinel element ref to observe scrolling
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -51,6 +54,13 @@ export function InfiniteWordList({
       observer.unobserve(sentinel)
     }
   }, [cursor, isPending])
+
+  useEffect(() => {
+    if (addedWords.length === 0) return
+    const temp = [...addedWords]
+    removeWords(temp)
+    setWords((prev) => [...temp, ...prev])
+  }, [addedWords])
 
   return (
     <div className="flex flex-col gap-3">

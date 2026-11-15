@@ -8,8 +8,12 @@ import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
 import { translateEnglishToVietnamese } from "@/lib/mymemory"
 import { prisma } from "@/lib/prisma"
 import { getPaginatedWords } from "@/lib/words"
+import { Word } from "@prisma/client"
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
+
+export type CreateWordResult =
+  { ok: true; word: Word } | { ok: false; error: string }
 
 export type TranslateResult =
   { ok: true; vietnamese: string } | { ok: false; error: string }
@@ -59,7 +63,7 @@ export async function createWord(input: {
   english: string
   vietnamese: string
   example: string
-}): Promise<ActionResult> {
+}): Promise<CreateWordResult> {
   const english = input.english.trim()
   const vietnamese = input.vietnamese.trim()
   const example = input.example.trim()
@@ -67,9 +71,9 @@ export async function createWord(input: {
   if (!english || !vietnamese) {
     return { ok: false, error: "English and Vietnamese are required." }
   }
-
+  let word: Word
   try {
-    await prisma.word.create({
+    word = await prisma.word.create({
       data: {
         english,
         vietnamese,
@@ -86,7 +90,7 @@ export async function createWord(input: {
 
   revalidatePath("/")
   revalidatePath("/review")
-  return { ok: true }
+  return { ok: true, word }
 }
 
 export async function fetchMoreWords(limit: number, cursor?: string) {
