@@ -2,11 +2,19 @@
 
 import "@/components/wdyr"
 import { useState, useTransition } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import type { Word } from "@prisma/client"
 import { CircleAlertIcon, PencilIcon, Trash2Icon } from "lucide-react"
 
 import { deleteWord, updateWord } from "@/app/actions"
 import { parseIssues, reminderLabel } from "@/lib/issues"
+import {
+  getWordsSnapshot,
+  patchWord,
+  removeWord,
+  restoreWords,
+  wordKeys,
+} from "@/lib/word-queries"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,6 +41,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 
 export function WordCard({ word }: { word: Word }) {
+  const queryClient = useQueryClient()
   const issues = parseIssues(word.issues)
   const [editing, setEditing] = useState(false)
   const [vietnamese, setVietnamese] = useState(word.vietnamese)
@@ -43,11 +52,21 @@ export function WordCard({ word }: { word: Word }) {
   function onSave() {
     setError(null)
     startTransition(async () => {
+      const snapshot = getWordsSnapshot(queryClient)
+      // Patch the card before the round trip so the edit lands instantly.
+      patchWord(queryClient, {
+        ...word,
+        vietnamese,
+        example: example || null,
+      })
+
       const result = await updateWord(word.id, { vietnamese, example })
       if (!result.ok) {
+        restoreWords(queryClient, snapshot)
         setError(result.error)
         return
       }
+      patchWord(queryClient, result.word)
       setEditing(false)
     })
   }
@@ -55,10 +74,18 @@ export function WordCard({ word }: { word: Word }) {
   function onDelete() {
     setError(null)
     startTransition(async () => {
+      const snapshot = getWordsSnapshot(queryClient)
+      removeWord(queryClient, word.id)
+
       const result = await deleteWord(word.id)
       if (!result.ok) {
+        restoreWords(queryClient, snapshot)
         setError(result.error)
+        return
       }
+      // A delete can invalidate the stored cursor (it may point at the row that
+      // is now gone), so refetch rather than trust the patched pages.
+      await queryClient.invalidateQueries({ queryKey: wordKeys.all })
     })
   }
 

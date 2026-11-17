@@ -6,15 +6,10 @@ import { WordCardSkeleton } from "@/components/word-card"
 
 async function SavedWordList() {
   const { words, nextCursor } = await getPaginatedWords(10)
-  if (words.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No words yet. Add one above to start reviewing.
-      </p>
-    )
-  }
 
-  return <InfiniteWordList initialWords={words} initialCursor={nextCursor} />
+  // Always mount the list: the empty state renders from inside it so the query
+  // has somewhere to put the first Word.
+  return <InfiniteWordList initialPage={{ words, nextCursor }} />
 }
 
 export default async function HomePage() {

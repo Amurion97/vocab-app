@@ -15,6 +15,9 @@ export type ActionResult = { ok: true } | { ok: false; error: string }
 export type CreateWordResult =
   { ok: true; word: Word } | { ok: false; error: string }
 
+export type UpdateWordResult =
+  { ok: true; word: Word } | { ok: false; error: string }
+
 export type TranslateResult =
   { ok: true; vietnamese: string } | { ok: false; error: string }
 
@@ -88,7 +91,6 @@ export async function createWord(input: {
     throw error
   }
 
-  revalidatePath("/")
   revalidatePath("/review")
   return { ok: true, word }
 }
@@ -106,7 +108,7 @@ export async function fetchMoreWords(limit: number, cursor?: string) {
 export async function updateWord(
   id: string,
   input: { vietnamese: string; example: string }
-): Promise<ActionResult> {
+): Promise<UpdateWordResult> {
   const vietnamese = input.vietnamese.trim()
   const example = input.example.trim()
 
@@ -114,8 +116,9 @@ export async function updateWord(
     return { ok: false, error: "Vietnamese is required." }
   }
 
+  let word: Word
   try {
-    await prisma.word.update({
+    word = await prisma.word.update({
       where: { id },
       data: {
         vietnamese,
@@ -130,9 +133,8 @@ export async function updateWord(
     throw error
   }
 
-  revalidatePath("/")
   revalidatePath("/review")
-  return { ok: true }
+  return { ok: true, word }
 }
 
 export async function deleteWord(id: string): Promise<ActionResult> {
@@ -146,7 +148,6 @@ export async function deleteWord(id: string): Promise<ActionResult> {
     throw error
   }
 
-  revalidatePath("/")
   revalidatePath("/review")
   return { ok: true }
 }

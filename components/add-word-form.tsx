@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react"
 
 import { createWord, translateWord } from "@/app/actions"
@@ -25,7 +26,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useUsageCheck } from "@/hooks/use-usage-check"
 import type { GrammarChecker } from "@/lib/issues"
-import { useAddedWordsStore } from "@/stores/added-words"
+import { prependWord } from "@/lib/word-queries"
 
 export function AddWordForm() {
   const [english, setEnglish] = useState("")
@@ -46,7 +47,7 @@ export function AddWordForm() {
     reset,
   } = useUsageCheck()
 
-  const { addWord } = useAddedWordsStore()
+  const queryClient = useQueryClient()
 
   const fieldsLocked = isChecking
 
@@ -88,7 +89,9 @@ export function AddWordForm() {
         setFormError(result.error)
         return
       }
-      addWord(result.word)
+      // Prepend into page zero rather than invalidating: invalidating refetches
+      // every loaded page, so a user deep in the list pays a round trip per page.
+      prependWord(queryClient, result.word)
       setEnglish("")
       setVietnamese("")
       setExample("")

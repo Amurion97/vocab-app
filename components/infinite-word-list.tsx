@@ -1,46 +1,37 @@
 "use client"
 
 import "@/components/wdyr"
-import { useEffect, useRef, useState, useTransition } from "react"
-import type { Word } from "@prisma/client"
+import { useEffect, useRef } from "react"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { WordCard, WordCardSkeleton } from "@/components/word-card"
-import { fetchMoreWords } from "@/app/actions"
-import { useAddedWordsStore } from "@/stores/added-words"
+import { wordsQueryOptions, type WordPage } from "@/lib/word-queries"
 
 interface InfiniteWordListProps {
-  initialWords: Word[]
-  initialCursor?: string | null
+  initialPage: WordPage
 }
 
-export function InfiniteWordList({
-  initialWords,
-  initialCursor,
-}: InfiniteWordListProps) {
-  const [words, setWords] = useState<Word[]>(initialWords)
-  const [cursor, setCursor] = useState<string | null>(initialCursor ?? null)
-  const [isPending, startTransition] = useTransition()
-
-  const { addedWords, removeWords } = useAddedWordsStore()
+export function InfiniteWordList({ initialPage }: InfiniteWordListProps) {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      ...wordsQueryOptions,
+      // Page one came from the server render as a prop, not an independent read.
+      // Without this shape TanStack Query refetches page one on mount.
+      initialData: { pages: [initialPage], pageParams: [undefined] },
+    })
 
   // Sentinel element ref to observe scrolling
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const sentinel = sentinelRef.current
-    // no sentinel yet (first load) or no cursor (no more words to fetch)
-    if (!sentinel || !cursor) return
+    // no sentinel yet (first load) or no more pages to fetch
+    if (!sentinel || !hasNextPage) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0]
-        if (firstEntry.isIntersecting && !isPending) {
-          startTransition(async () => {
-            const res = await fetchMoreWords(10, cursor)
-            if (res.ok) {
-              setWords((prev) => [...prev, ...res.words])
-              setCursor(res.nextCursor)
-            }
-          })
+        if (firstEntry.isIntersecting && !isFetchingNextPage) {
+          void fetchNextPage()
         }
       },
       {
@@ -53,14 +44,19 @@ export function InfiniteWordList({
     return () => {
       observer.unobserve(sentinel)
     }
-  }, [cursor, isPending])
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
-  useEffect(() => {
-    if (addedWords.length === 0) return
-    const temp = [...addedWords]
-    removeWords(temp)
-    setWords((prev) => [...temp, ...prev])
-  }, [addedWords])
+  const words = data?.pages.flatMap((page) => page.words) ?? []
+
+  // The empty state lives here rather than in the parent: the list must always
+  // mount, or the query has nowhere to write the first Word into.
+  if (words.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No words yet. Add one above to start reviewing.
+      </p>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -68,15 +64,15 @@ export function InfiniteWordList({
         <WordCard key={word.id} word={word} />
       ))}
 
-      {isPending && <WordCardSkeleton />}
+      {isFetchingNextPage && <WordCardSkeleton />}
 
       {/* Sentinel indicator & Loading feedback */}
-      {cursor && (
+      {hasNextPage && (
         <div
           ref={sentinelRef}
           className="flex justify-center py-4 text-sm text-muted-foreground"
         >
-          {isPending ? null : "Scroll down to load more"}
+          {isFetchingNextPage ? null : "Scroll down to load more"}
         </div>
       )}
     </div>

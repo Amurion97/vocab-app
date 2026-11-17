@@ -26,8 +26,6 @@ export async function getPaginatedWords(limit = 10, cursor?: string) {
   const nextCursor: string | null =
     words.length === limit ? words[limit - 1].id : null
 
-  // artificially delay response
-  await new Promise((resolve) => setTimeout(resolve, 2000))
   return {
     words,
     nextCursor,
