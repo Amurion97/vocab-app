@@ -66,7 +66,7 @@ export function QuizCard({ word }: { word: Word }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span>{word.english}</span>
-          <PronounceButton word={word.english} />
+          <PronounceButton word={word.english} size="sm" />
         </CardTitle>
         <CardDescription>Vietnamese meaning: {word.vietnamese}</CardDescription>
       </CardHeader>

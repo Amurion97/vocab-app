@@ -1,11 +1,21 @@
+import { logExpectedError } from "@/lib/app-log"
+
 // Server-side helper for the QuickPronounce API. Never import this from a
 // client component: it reads the API key from the server environment.
 
 const QUICK_PRONOUNCE_URL = "https://api.quickpronounce.site/v1/pronunciation"
 const REQUEST_TIMEOUT_MS = 10_000
 
+export type PronunciationErrorKind =
+  | "unconfigured"
+  | "unreachable"
+  | "quota_exhausted"
+  | "upstream_error"
+  | "no_audio"
+
 export type PronunciationResult =
-  { ok: true; audioBase64: string; ipa?: string } | { ok: false; error: string }
+  | { ok: true; audioBase64: string; ipa?: string; format: string }
+  | { ok: false; kind: PronunciationErrorKind; error: string }
 
 function apiKey() {
   // Match lib/sapling.ts: strip stray wrapping quotes the .env file may keep.
@@ -36,7 +46,16 @@ export async function fetchPronunciation(
 ): Promise<PronunciationResult> {
   const key = apiKey()
   if (!key) {
-    return { ok: false, error: "Pronunciation service is not configured." }
+    logExpectedError({
+      action: "fetchPronunciation",
+      message: "Pronunciation service is not configured.",
+      word,
+    })
+    return {
+      ok: false,
+      kind: "unconfigured",
+      error: "Pronunciation service is not configured.",
+    }
   }
 
   let response: Response
@@ -49,18 +68,35 @@ export async function fetchPronunciation(
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       }
     )
-  } catch {
-    return { ok: false, error: "Pronunciation service is unreachable." }
+  } catch (error) {
+    logExpectedError({
+      action: "fetchPronunciation",
+      message: "Pronunciation service is unreachable.",
+      word,
+      error,
+    })
+    return {
+      ok: false,
+      kind: "unreachable",
+      error: "Pronunciation service is unreachable.",
+    }
   }
 
   if (!response.ok) {
-    return {
-      ok: false,
-      error:
-        response.status === 429
-          ? "Pronunciation quota is exhausted for today."
-          : "Pronunciation service returned an error.",
-    }
+    const isQuota = response.status === 429
+    const kind: PronunciationErrorKind = isQuota
+      ? "quota_exhausted"
+      : "upstream_error"
+    const error = isQuota
+      ? "Pronunciation quota is exhausted for today."
+      : "Pronunciation service returned an error."
+    logExpectedError({
+      action: "fetchPronunciation",
+      message: error,
+      word,
+      status: response.status,
+    })
+    return { ok: false, kind, error }
   }
 
   const data = (await response
@@ -68,12 +104,22 @@ export async function fetchPronunciation(
     .catch(() => null)) as QuickPronounceResponse | null
   const audioBase64 = data?.data?.audio?.content
   if (!data || typeof audioBase64 !== "string" || audioBase64.length === 0) {
-    return { ok: false, error: "Pronunciation service returned no audio." }
+    logExpectedError({
+      action: "fetchPronunciation",
+      message: "Pronunciation service returned no audio.",
+      word,
+    })
+    return {
+      ok: false,
+      kind: "no_audio",
+      error: "Pronunciation service returned no audio.",
+    }
   }
 
   return {
     ok: true,
     audioBase64,
+    format: data.data?.audio?.format || "mp3",
     ipa:
       typeof data.data?.phonetics?.us === "string"
         ? data.data.phonetics.us

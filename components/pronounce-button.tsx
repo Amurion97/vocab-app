@@ -25,14 +25,6 @@ export function PronounceButton({
   const [isLoading, setIsLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
-  const playBase64 = useCallback((base64: string) => {
-    const audio = new Audio(`data:audio/mp3;base64,${base64}`)
-    setIsPlaying(true)
-    audio.addEventListener("ended", () => setIsPlaying(false))
-    audio.addEventListener("error", () => setIsPlaying(false))
-    void audio.play().catch(() => setIsPlaying(false))
-  }, [])
-
   const fallbackToSpeech = useCallback((text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) {
       return
@@ -42,6 +34,22 @@ export function PronounceButton({
     window.speechSynthesis.speak(utterance)
   }, [])
 
+  const playAudio = useCallback(
+    (src: string, fallbackWord: string) => {
+      const audio = new Audio(src)
+      setIsPlaying(true)
+      const onEnded = () => setIsPlaying(false)
+      const onError = () => {
+        setIsPlaying(false)
+        fallbackToSpeech(fallbackWord)
+      }
+      audio.addEventListener("ended", onEnded)
+      audio.addEventListener("error", onError)
+      void audio.play().catch(onError)
+    },
+    [fallbackToSpeech]
+  )
+
   const onSpeak = useCallback(async () => {
     const trimmed = word.trim()
     if (!trimmed) {
@@ -50,7 +58,7 @@ export function PronounceButton({
 
     const cached = audioCache.get(trimmed.toLowerCase())
     if (cached) {
-      playBase64(cached)
+      playAudio(cached, trimmed)
       return
     }
 
@@ -62,10 +70,14 @@ export function PronounceButton({
       const data = (await response.json().catch(() => null)) as {
         ok: boolean
         audioBase64?: string
+        format?: string
       } | null
       if (response.ok && data?.ok && data.audioBase64) {
-        audioCache.set(trimmed.toLowerCase(), data.audioBase64)
-        playBase64(data.audioBase64)
+        const format = data.format || "mp3"
+        const mime = format === "mp3" ? "audio/mp3" : `audio/${format}`
+        const dataUrl = `data:${mime};base64,${data.audioBase64}`
+        audioCache.set(trimmed.toLowerCase(), dataUrl)
+        playAudio(dataUrl, trimmed)
       } else {
         // Quota exhausted or upstream failure: the user still hears the word.
         fallbackToSpeech(trimmed)
@@ -75,7 +87,7 @@ export function PronounceButton({
     } finally {
       setIsLoading(false)
     }
-  }, [word, playBase64, fallbackToSpeech])
+  }, [word, playAudio, fallbackToSpeech])
 
   const inactive = disabled || isLoading || isPlaying || !word.trim()
 
