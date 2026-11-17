@@ -12,6 +12,7 @@ import {
   GrammarCheckerPicker,
 } from "@/components/grammar-checkers"
 import { UsageCheckActions } from "@/components/usage-check-actions"
+import { PronounceButton } from "@/components/pronounce-button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -63,7 +64,10 @@ export function QuizCard({ word }: { word: Word }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{word.english}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <span>{word.english}</span>
+          <PronounceButton word={word.english} />
+        </CardTitle>
         <CardDescription>Vietnamese meaning: {word.vietnamese}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

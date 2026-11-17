@@ -11,6 +11,7 @@ import {
   GrammarCheckerPicker,
 } from "@/components/grammar-checkers"
 import { UsageCheckActions } from "@/components/usage-check-actions"
+import { PronounceButton } from "@/components/pronounce-button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -126,6 +127,10 @@ export function AddWordForm() {
                 }}
                 placeholder="ephemeral"
                 required
+              />
+              <PronounceButton
+                word={english}
+                disabled={fieldsLocked || !english.trim()}
               />
               <Button
                 type="button"
