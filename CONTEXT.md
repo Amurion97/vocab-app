@@ -12,6 +12,10 @@ _Avoid_: entry, card, item
 An optional note sentence stored on a **Word**.
 _Avoid_: using “example” for the text written during **Review**
 
+**Pronunciation**:
+Audio playback of a **Word**'s spoken English form, optionally accompanied by its IPA transcription.
+_Avoid_: speech, TTS
+
 **Sentence**:
 The text the student writes during a **Review** to use the **Word**.
 _Avoid_: example, answer, response
@@ -55,6 +59,7 @@ _Avoid_: day, schedule window
 ## Relationships
 
 - A **Word** may have one **Example**
+- A **Word** can be played aloud via its **Pronunciation**
 - A **Review** presents exactly one **Word**
 - The student submits one **Sentence** per **Review**
 - A **Usage check** grades that **Sentence** with a **Meaning check** and a **Grammar check**
