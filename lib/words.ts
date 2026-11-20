@@ -71,17 +71,17 @@ export async function getNextReviewWord(
     return pickOldestReviewed(withMeaningErrors)
   }
 
-  return [...pool].sort(byAccuracyThenReviews)[0]
+  return pool.toSorted(byAccuracyThenReviews)[0]
 }
 
 function pickOldest(words: Word[]) {
-  return [...words].sort(
+  return words.toSorted(
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
   )[0]
 }
 
 function pickOldestReviewed(words: Word[]) {
-  return [...words].sort((a, b) => {
+  return words.toSorted((a, b) => {
     const aTime = a.lastReviewedAt?.getTime() ?? 0
     const bTime = b.lastReviewedAt?.getTime() ?? 0
     return aTime - bTime
