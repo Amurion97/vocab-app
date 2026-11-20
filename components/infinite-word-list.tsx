@@ -4,7 +4,11 @@ import "@/components/wdyr"
 import { useEffect, useRef } from "react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { WordCard, WordCardSkeleton } from "@/components/word-card"
-import { wordsQueryOptions, type WordPage } from "@/lib/word-queries"
+import {
+  wordsInitialData,
+  wordsQueryOptions,
+  type WordPage,
+} from "@/lib/word-queries"
 
 interface InfiniteWordListProps {
   initialPage: WordPage
@@ -16,7 +20,7 @@ export function InfiniteWordList({ initialPage }: InfiniteWordListProps) {
       ...wordsQueryOptions,
       // Page one came from the server render as a prop, not an independent read.
       // Without this shape TanStack Query refetches page one on mount.
-      initialData: { pages: [initialPage], pageParams: [undefined] },
+      initialData: wordsInitialData(initialPage),
     })
 
   // Sentinel element ref to observe scrolling
@@ -30,7 +34,7 @@ export function InfiniteWordList({ initialPage }: InfiniteWordListProps) {
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0]
-        if (firstEntry.isIntersecting && !isFetchingNextPage) {
+        if (firstEntry.isIntersecting && hasNextPage && !isFetchingNextPage) {
           void fetchNextPage()
         }
       },

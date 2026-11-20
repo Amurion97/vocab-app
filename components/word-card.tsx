@@ -15,6 +15,7 @@ import {
   restoreWords,
   wordKeys,
 } from "@/lib/word-queries"
+import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -46,51 +47,70 @@ export function WordCard({ word }: { word: Word }) {
   const [editing, setEditing] = useState(false)
   const [vietnamese, setVietnamese] = useState(word.vietnamese)
   const [example, setExample] = useState(word.example ?? "")
-  const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [isSaving, startSaveTransition] = useTransition()
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleting, startDeleteTransition] = useTransition()
 
   function onSave() {
-    setError(null)
-    startTransition(async () => {
+    setSaveError(null)
+    startSaveTransition(async () => {
       const snapshot = getWordsSnapshot(queryClient)
-      // Patch the card before the round trip so the edit lands instantly.
+      // Patch the Word before the round trip so the edit lands instantly.
       patchWord(queryClient, {
         ...word,
         vietnamese,
         example: example || null,
       })
 
-      const result = await updateWord(word.id, { vietnamese, example })
-      if (!result.ok) {
+      try {
+        const result = await updateWord(word.id, { vietnamese, example })
+        if (!result.ok) {
+          restoreWords(queryClient, snapshot)
+          setSaveError(result.error)
+          return
+        }
+        patchWord(queryClient, result.word)
+        setEditing(false)
+      } catch (err) {
         restoreWords(queryClient, snapshot)
-        setError(result.error)
-        return
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to update word."
+        )
       }
-      patchWord(queryClient, result.word)
-      setEditing(false)
     })
   }
 
   function onDelete() {
-    setError(null)
-    startTransition(async () => {
-      const snapshot = getWordsSnapshot(queryClient)
-      removeWord(queryClient, word.id)
-
-      const result = await deleteWord(word.id)
-      if (!result.ok) {
-        restoreWords(queryClient, snapshot)
-        setError(result.error)
-        return
+    setDeleteError(null)
+    startDeleteTransition(async () => {
+      try {
+        const result = await deleteWord(word.id)
+        if (!result.ok) {
+          setDeleteError(result.error)
+          return
+        }
+        // Server confirmed: close dialog, remove from cache, and refetch clean cursors.
+        setDeleteDialogOpen(false)
+        removeWord(queryClient, word.id)
+        await queryClient.invalidateQueries({ queryKey: wordKeys.all })
+      } catch (err) {
+        setDeleteError(
+          err instanceof Error ? err.message : "Failed to delete word."
+        )
       }
-      // A delete can invalidate the stored cursor (it may point at the row that
-      // is now gone), so refetch rather than trust the patched pages.
-      await queryClient.invalidateQueries({ queryKey: wordKeys.all })
     })
   }
 
   return (
-    <Card className="group">
+    <Card
+      className={cn(
+        "group transition-opacity duration-200",
+        isDeleting && "pointer-events-none opacity-50"
+      )}
+    >
       <CardHeader>
         <CardTitle>{word.english}</CardTitle>
         <CardDescription>{word.vietnamese}</CardDescription>
@@ -100,6 +120,7 @@ export function WordCard({ word }: { word: Word }) {
             variant="ghost"
             size="icon-sm"
             aria-label="Edit word"
+            disabled={isDeleting}
             onClick={() => {
               setVietnamese(word.vietnamese)
               setExample(word.example ?? "")
@@ -108,7 +129,16 @@ export function WordCard({ word }: { word: Word }) {
           >
             <PencilIcon />
           </Button>
-          <Dialog>
+          <Dialog
+            open={deleteDialogOpen}
+            onOpenChange={(open) => {
+              if (isDeleting) return
+              setDeleteDialogOpen(open)
+              if (!open) {
+                setDeleteError(null)
+              }
+            }}
+          >
             <DialogTrigger
               render={
                 <Button
@@ -116,6 +146,7 @@ export function WordCard({ word }: { word: Word }) {
                   variant="ghost"
                   size="icon-sm"
                   aria-label="Delete word"
+                  disabled={isDeleting}
                 />
               }
             >
@@ -128,14 +159,17 @@ export function WordCard({ word }: { word: Word }) {
                   This removes the word and its review stats.
                 </DialogDescription>
               </DialogHeader>
+              {deleteError ? (
+                <p className="text-sm text-destructive">{deleteError}</p>
+              ) : null}
               <DialogFooter>
                 <Button
                   type="button"
                   variant="destructive"
-                  disabled={isPending}
+                  disabled={isDeleting}
                   onClick={onDelete}
                 >
-                  {isPending ? "Deleting…" : "Delete"}
+                  {isDeleting ? "Deleting…" : "Delete"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -195,9 +229,11 @@ export function WordCard({ word }: { word: Word }) {
                 onChange={(event) => setExample(event.target.value)}
               />
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <Button type="button" disabled={isPending} onClick={onSave}>
-              {isPending ? "Saving…" : "Save changes"}
+            {saveError ? (
+              <p className="text-sm text-destructive">{saveError}</p>
+            ) : null}
+            <Button type="button" disabled={isSaving} onClick={onSave}>
+              {isSaving ? "Saving…" : "Save changes"}
             </Button>
           </div>
         ) : null}

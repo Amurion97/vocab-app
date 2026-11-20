@@ -60,36 +60,34 @@ export function prependWord(queryClient: QueryClient, word: Word) {
   )
 }
 
-/** Replace a Word by id wherever it sits across the loaded pages. */
-export function patchWord(queryClient: QueryClient, word: Word) {
+function updatePages(
+  queryClient: QueryClient,
+  updater: (page: WordPage) => WordPage
+) {
   queryClient.setQueryData<WordsData>(wordKeys.all, (old) =>
     old
       ? {
           ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            words: page.words.map((item) =>
-              item.id === word.id ? word : item
-            ),
-          })),
+          pages: old.pages.map(updater),
         }
       : old
   )
 }
 
+/** Replace a Word by id wherever it sits across the loaded pages. */
+export function patchWord(queryClient: QueryClient, word: Word) {
+  updatePages(queryClient, (page) => ({
+    ...page,
+    words: page.words.map((w) => (w.id === word.id ? word : w)),
+  }))
+}
+
 /** Drop a Word by id from every loaded page. */
 export function removeWord(queryClient: QueryClient, id: string) {
-  queryClient.setQueryData<WordsData>(wordKeys.all, (old) =>
-    old
-      ? {
-          ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            words: page.words.filter((item) => item.id !== id),
-          })),
-        }
-      : old
-  )
+  updatePages(queryClient, (page) => ({
+    ...page,
+    words: page.words.filter((w) => w.id !== id),
+  }))
 }
 
 /** Restore a snapshot taken before an optimistic patch. */
