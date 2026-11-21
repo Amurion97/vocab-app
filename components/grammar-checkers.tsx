@@ -13,7 +13,8 @@ import {
 
 const CHECKER_LINKS: Record<GrammarChecker, string> = {
   LanguageTool: "https://languagetool.org",
-  Sapling: "https://sapling.ai",
+  Groq: "https://groq.com",
+  Sapling: "https://sapling.ai", // Legacy: kept for rendering historical review issues from DB
 }
 
 export function GrammarCheckerPicker({

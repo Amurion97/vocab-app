@@ -1,6 +1,14 @@
-export const GRAMMAR_CHECKERS = ["LanguageTool", "Sapling"] as const
+export const GRAMMAR_CHECKERS = ["LanguageTool", "Groq"] as const
 
-export type GrammarChecker = (typeof GRAMMAR_CHECKERS)[number]
+export type ActiveGrammarChecker = (typeof GRAMMAR_CHECKERS)[number]
+
+// Note for future developers:
+// "Sapling" is kept in the GrammarChecker union for backwards compatibility:
+// 1. Existing word reviews in the database (Word.issues JSON column) may have "Sapling"
+//    recorded as the checker, allowing parseIssues() and reminderLabel() to still render them.
+// 2. Preserves type parity with legacy code in lib/sapling.ts and test/sapling.test.ts.
+// Only ActiveGrammarChecker values (LanguageTool, Groq) are selectable in the UI.
+export type GrammarChecker = ActiveGrammarChecker | "Sapling"
 
 // offset and length index the reminder message, not the learner's sentence.
 export type GrammarHighlight = {
@@ -53,7 +61,7 @@ export function parseCheckerSelection(value: unknown): GrammarChecker[] | null {
 
   const selected: GrammarChecker[] = []
   for (const item of value) {
-    if (item !== "LanguageTool" && item !== "Sapling") {
+    if (item !== "LanguageTool" && item !== "Groq" && item !== "Sapling") {
       return null
     }
     if (!selected.includes(item)) {
@@ -102,7 +110,9 @@ function readIssue(value: unknown): ReviewIssue | null {
   }
   if (
     parsed.source === "grammar" &&
-    (issue.checker === "LanguageTool" || issue.checker === "Sapling")
+    (issue.checker === "LanguageTool" ||
+      issue.checker === "Groq" ||
+      issue.checker === "Sapling")
   ) {
     parsed.checker = issue.checker
   }

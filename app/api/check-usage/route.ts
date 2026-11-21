@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache"
 
 import { checkWordUsage, logUsageCheckFailure } from "@/lib/gemini-usage"
 import { checkGrammar } from "@/lib/languagetool"
+import { checkGroq } from "@/lib/groq-grammar"
 import { prisma } from "@/lib/prisma"
 import { checkSapling } from "@/lib/sapling"
 import {
@@ -21,6 +22,7 @@ function issueUpdateToPrismaData(issueUpdate: IssueUpdate) {
 const deps: UsageCheckDeps = {
   checkMeaning: checkWordUsage,
   checkLanguageTool: checkGrammar,
+  checkGroq,
   checkSapling,
   findWord: (id) =>
     prisma.word.findUnique({

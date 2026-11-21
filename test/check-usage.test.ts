@@ -20,6 +20,9 @@ function standIns(): UsageCheckDeps {
     checkLanguageTool: async () => {
       throw new Error("LanguageTool should not run")
     },
+    checkGroq: async () => {
+      throw new Error("Groq should not run")
+    },
     checkSapling: async () => {
       throw new Error("Sapling should not run")
     },
@@ -57,7 +60,7 @@ test("empty checker selection is rejected before any checker runs", async () => 
   assert.equal(response.status, 400)
   assert.deepEqual(await response.json(), {
     ok: false,
-    error: "Choose LanguageTool, Sapling, or both.",
+    error: "Choose LanguageTool, Groq, or both.",
   })
 })
 
@@ -75,7 +78,7 @@ test("an unknown checker is rejected before any checker runs", async () => {
   assert.equal(response.status, 400)
   assert.deepEqual(await response.json(), {
     ok: false,
-    error: "Choose LanguageTool, Sapling, or both.",
+    error: "Choose LanguageTool, Groq, or both.",
   })
 })
 
@@ -152,6 +155,46 @@ test("Sapling only returns that checker's warning", async () => {
     grammarChecks: [
       {
         checker: "Sapling",
+        available: true,
+        suggestions: [{ message: "make → makes" }],
+      },
+    ],
+  })
+})
+
+test("Groq only returns that checker's warning", async () => {
+  const deps = standIns()
+  deps.checkMeaning = async () => passedMeaning
+  deps.checkGroq = async () => [{ message: "make → makes" }]
+
+  const response = await handleUsageCheck(
+    request({
+      english: "make",
+      vietnamese: "làm",
+      sentence: "He make a mistake.",
+      checkers: ["Groq"],
+    }),
+    deps
+  )
+
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    passed: true,
+    wordPresent: true,
+    feedback: "Used with the right meaning.",
+    suggestion: null,
+    issues: [
+      {
+        source: "grammar",
+        severity: "warning",
+        message: "make → makes",
+        checker: "Groq",
+      },
+    ],
+    grammarChecks: [
+      {
+        checker: "Groq",
         available: true,
         suggestions: [{ message: "make → makes" }],
       },
@@ -427,5 +470,37 @@ test("a passed Meaning check keeps stored reminders when the selected checker fa
   assert.deepEqual(body.grammarChecks, [
     { checker: "Sapling", available: false, suggestions: [] },
   ])
-  assert.deepEqual(savedIssueUpdate, { kind: "preserve" })
+  assert.deepEqual(savedIssueUpdate, { kind: "clear" })
+})
+
+test("a passed Meaning check keeps stored reminders when Groq fails", async () => {
+  const deps = standIns()
+  deps.checkMeaning = async () => passedMeaning
+  deps.findWord = async () => ({
+    id: "word-1",
+    english: "make",
+    vietnamese: "làm",
+  })
+  deps.revalidateHome = () => {}
+  let savedIssueUpdate: unknown = "not-saved"
+  deps.saveAttempt = async (input) => {
+    savedIssueUpdate = input.issueUpdate
+  }
+
+  const response = await handleUsageCheck(
+    request({
+      wordId: "word-1",
+      sentence: "He makes a mistake.",
+      checkers: ["Groq"],
+    }),
+    deps
+  )
+
+  assert.equal(response.status, 200)
+  const body = await response.json()
+  assert.equal(body.passed, true)
+  assert.deepEqual(body.grammarChecks, [
+    { checker: "Groq", available: false, suggestions: [] },
+  ])
+  assert.deepEqual(savedIssueUpdate, { kind: "clear" })
 })

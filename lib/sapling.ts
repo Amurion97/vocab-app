@@ -1,3 +1,6 @@
+// Legacy reference: Replaced by Groq checker in lib/groq-grammar.ts.
+// Preserved for reference and historical parity.
+
 import {
   isRangeWithin,
   type GrammarHighlight,

@@ -16,7 +16,8 @@ export type UsageCheckDeps = {
     sentence: string
   }) => Promise<UsageCheck>
   checkLanguageTool: (sentence: string) => Promise<{ message: string }[]>
-  checkSapling: (sentence: string) => Promise<{ message: string }[]>
+  checkGroq: (sentence: string) => Promise<{ message: string }[]>
+  checkSapling?: (sentence: string) => Promise<{ message: string }[]>
   findWord: (id: string) => Promise<{
     id: string
     english: string
@@ -74,7 +75,7 @@ export async function handleUsageCheck(request: Request, deps: UsageCheckDeps) {
   const checkers = parseCheckerSelection(body.checkers)
   if (!checkers) {
     return json(
-      { ok: false, error: "Choose LanguageTool, Sapling, or both." },
+      { ok: false, error: "Choose LanguageTool, Groq, or both." },
       400
     )
   }
@@ -149,9 +150,13 @@ async function gradeUsage(
   | { ok: true; grade: GradeOk }
   | { ok: false; error: string; reason?: "busy"; status: number }
 > {
-  const callChecker = {
+  const callChecker: Record<
+    GrammarChecker,
+    (sentence: string) => Promise<{ message: string }[]>
+  > = {
     LanguageTool: deps.checkLanguageTool,
-    Sapling: deps.checkSapling,
+    Groq: deps.checkGroq,
+    Sapling: deps.checkSapling ?? (() => Promise.resolve([])),
   }
   const meaningPromise = deps.checkMeaning(params)
   const checkerPromise = Promise.allSettled(
