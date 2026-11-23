@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Be_Vietnam_Pro, Geist_Mono } from "next/font/google"
+import { Be_Vietnam_Pro } from "next/font/google"
 
 import { QueryProvider } from "@/components/query-provider"
 import { SiteHeader } from "@/components/site-header"
@@ -13,11 +13,6 @@ const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500"],
   variable: "--font-sans",
-})
-
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
 })
 
 export const metadata: Metadata = {
@@ -34,12 +29,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(
-        "antialiased",
-        fontMono.variable,
-        "font-sans",
-        beVietnamPro.variable
-      )}
+      className={cn("antialiased", "font-sans", beVietnamPro.variable)}
     >
       <body>
         <WhyDidYouRenderInit />
