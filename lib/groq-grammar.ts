@@ -13,12 +13,10 @@ export type GroqEdit = {
   description?: string
   context?: string
   start?: number
-  end?: number
 }
 
 export type GroqGrammarResponse = {
   edits?: GroqEdit[]
-  suggestions?: GroqEdit[]
 }
 
 function groqApiKey() {
@@ -29,7 +27,7 @@ function groqApiKey() {
   const wrapped =
     (raw.startsWith('"') && raw.endsWith('"')) ||
     (raw.startsWith("'") && raw.endsWith("'"))
-  const unquoted = wrapped ? raw.slice(1, -1) : raw.replace(/^["']/, "")
+  const unquoted = wrapped ? raw.slice(1, -1) : raw
   return unquoted.trim() || undefined
 }
 
@@ -37,11 +35,12 @@ function findWordOffset(
   context: string,
   word: string,
   startHint?: number,
-  usedOffsets?: Set<number>
+  usedOffsets?: Set<number>,
+  fullText?: string
 ): number {
   if (!word || !context) return -1
 
-  // 1. If startHint is explicitly provided and matches word
+  // 1. If startHint is explicitly provided and matches word within context
   if (
     typeof startHint === "number" &&
     startHint >= 0 &&
@@ -51,7 +50,27 @@ function findWordOffset(
     return startHint
   }
 
-  // 2. Search for the next available occurrence that hasn't been used yet
+  // 2. If startHint is sentence-relative and context is a substring of fullText
+  if (
+    typeof startHint === "number" &&
+    startHint >= 0 &&
+    fullText &&
+    context !== fullText
+  ) {
+    const contextStart = fullText.indexOf(context)
+    if (contextStart !== -1) {
+      const relativeStart = startHint - contextStart
+      if (
+        relativeStart >= 0 &&
+        context.startsWith(word, relativeStart) &&
+        (!usedOffsets || !usedOffsets.has(relativeStart))
+      ) {
+        return relativeStart
+      }
+    }
+  }
+
+  // 3. Search for the next available occurrence that hasn't been used yet
   let searchFrom = 0
   while (searchFrom <= context.length - word.length) {
     const at = context.indexOf(word, searchFrom)
@@ -82,7 +101,7 @@ function contextOf(
     return quote
   }
 
-  const offset = findWordOffset(context, word, start, usedOffsets)
+  const offset = findWordOffset(context, word, start, usedOffsets, text)
   if (offset !== -1 && isRangeWithin(context, offset, word.length)) {
     quote.highlight = { offset, length: word.length }
     usedOffsets?.add(offset)
@@ -91,6 +110,7 @@ function contextOf(
 }
 
 export type CheckGroqDeps = {
+  apiKey?: string
   client?: Pick<Groq, "chat">
 }
 
@@ -98,8 +118,8 @@ export async function checkGroq(
   text: string,
   deps?: CheckGroqDeps
 ): Promise<GrammarMatch[]> {
-  const key = groqApiKey()
-  if (!key && !deps?.client) {
+  const key = deps?.apiKey ?? groqApiKey()
+  if (!key) {
     throw new Error("Groq is unavailable.")
   }
 
@@ -154,11 +174,7 @@ If the sentence has no grammatical, spelling, or phrasing errors, return {"edits
     return []
   }
 
-  const rawEdits = Array.isArray(data?.edits)
-    ? data.edits
-    : Array.isArray(data?.suggestions)
-      ? data.suggestions
-      : []
+  const rawEdits = Array.isArray(data?.edits) ? data.edits : []
 
   const matches: GrammarMatch[] = []
   const usedOffsetsByContext = new Map<string, Set<number>>()

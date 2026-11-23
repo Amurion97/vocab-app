@@ -23,9 +23,6 @@ function standIns(): UsageCheckDeps {
     checkGroq: async () => {
       throw new Error("Groq should not run")
     },
-    checkSapling: async () => {
-      throw new Error("Sapling should not run")
-    },
     findWord: async () => {
       throw new Error("Word lookup should not run")
     },
@@ -122,11 +119,7 @@ test("LanguageTool only returns that checker's warning", async () => {
   })
 })
 
-test("Sapling only returns that checker's warning", async () => {
-  const deps = standIns()
-  deps.checkMeaning = async () => passedMeaning
-  deps.checkSapling = async () => [{ message: "make → makes" }]
-
+test("Sapling is rejected as an inactive checker", async () => {
   const response = await handleUsageCheck(
     request({
       english: "make",
@@ -134,31 +127,13 @@ test("Sapling only returns that checker's warning", async () => {
       sentence: "He make a mistake.",
       checkers: ["Sapling"],
     }),
-    deps
+    standIns()
   )
 
-  assert.equal(response.status, 200)
+  assert.equal(response.status, 400)
   assert.deepEqual(await response.json(), {
-    ok: true,
-    passed: true,
-    wordPresent: true,
-    feedback: "Used with the right meaning.",
-    suggestion: null,
-    issues: [
-      {
-        source: "grammar",
-        severity: "warning",
-        message: "make → makes",
-        checker: "Sapling",
-      },
-    ],
-    grammarChecks: [
-      {
-        checker: "Sapling",
-        available: true,
-        suggestions: [{ message: "make → makes" }],
-      },
-    ],
+    ok: false,
+    error: "Choose LanguageTool, Groq, or both.",
   })
 })
 
@@ -206,14 +181,14 @@ test("both checkers keep separate sections for the same warning", async () => {
   const deps = standIns()
   deps.checkMeaning = async () => passedMeaning
   deps.checkLanguageTool = async () => [{ message: "Use makes." }]
-  deps.checkSapling = async () => [{ message: "Use makes." }]
+  deps.checkGroq = async () => [{ message: "Use makes." }]
 
   const response = await handleUsageCheck(
     request({
       english: "make",
       vietnamese: "làm",
       sentence: "He make a mistake.",
-      checkers: ["LanguageTool", "Sapling"],
+      checkers: ["LanguageTool", "Groq"],
     }),
     deps
   )
@@ -236,7 +211,7 @@ test("both checkers keep separate sections for the same warning", async () => {
         source: "grammar",
         severity: "warning",
         message: "Use makes.",
-        checker: "Sapling",
+        checker: "Groq",
       },
     ],
     grammarChecks: [
@@ -246,7 +221,7 @@ test("both checkers keep separate sections for the same warning", async () => {
         suggestions: [{ message: "Use makes." }],
       },
       {
-        checker: "Sapling",
+        checker: "Groq",
         available: true,
         suggestions: [{ message: "Use makes." }],
       },
@@ -257,14 +232,14 @@ test("both checkers keep separate sections for the same warning", async () => {
 test("one rejected checker leaves the other checker's warning", async () => {
   const deps = standIns()
   deps.checkMeaning = async () => passedMeaning
-  deps.checkSapling = async () => [{ message: "make → makes" }]
+  deps.checkGroq = async () => [{ message: "make → makes" }]
 
   const response = await handleUsageCheck(
     request({
       english: "make",
       vietnamese: "làm",
       sentence: "He make a mistake.",
-      checkers: ["LanguageTool", "Sapling"],
+      checkers: ["LanguageTool", "Groq"],
     }),
     deps
   )
@@ -277,13 +252,13 @@ test("one rejected checker leaves the other checker's warning", async () => {
       source: "grammar",
       severity: "warning",
       message: "make → makes",
-      checker: "Sapling",
+      checker: "Groq",
     },
   ])
   assert.deepEqual(body.grammarChecks, [
     { checker: "LanguageTool", available: false, suggestions: [] },
     {
-      checker: "Sapling",
+      checker: "Groq",
       available: true,
       suggestions: [{ message: "make → makes" }],
     },
@@ -327,7 +302,7 @@ test("any other Meaning check failure returns 500", async () => {
       english: "make",
       vietnamese: "làm",
       sentence: "He make a mistake.",
-      checkers: ["Sapling"],
+      checkers: ["Groq"],
     }),
     deps
   )
@@ -417,14 +392,14 @@ test("issue reader keeps meaning issues and grammar issues with or without a che
 test("a selected checker with no suggestions still has a section", async () => {
   const deps = standIns()
   deps.checkMeaning = async () => passedMeaning
-  deps.checkSapling = async () => []
+  deps.checkGroq = async () => []
 
   const response = await handleUsageCheck(
     request({
       english: "make",
       vietnamese: "làm",
       sentence: "He makes a mistake.",
-      checkers: ["Sapling"],
+      checkers: ["Groq"],
     }),
     deps
   )
@@ -437,11 +412,11 @@ test("a selected checker with no suggestions still has a section", async () => {
     feedback: "Used with the right meaning.",
     suggestion: null,
     issues: [],
-    grammarChecks: [{ checker: "Sapling", available: true, suggestions: [] }],
+    grammarChecks: [{ checker: "Groq", available: true, suggestions: [] }],
   })
 })
 
-test("a passed Meaning check keeps stored reminders when the selected checker fails", async () => {
+test("a passed Meaning check clears stored reminders when LanguageTool fails", async () => {
   const deps = standIns()
   deps.checkMeaning = async () => passedMeaning
   deps.findWord = async () => ({
@@ -459,7 +434,7 @@ test("a passed Meaning check keeps stored reminders when the selected checker fa
     request({
       wordId: "word-1",
       sentence: "He makes a mistake.",
-      checkers: ["Sapling"],
+      checkers: ["LanguageTool"],
     }),
     deps
   )
@@ -468,12 +443,12 @@ test("a passed Meaning check keeps stored reminders when the selected checker fa
   const body = await response.json()
   assert.equal(body.passed, true)
   assert.deepEqual(body.grammarChecks, [
-    { checker: "Sapling", available: false, suggestions: [] },
+    { checker: "LanguageTool", available: false, suggestions: [] },
   ])
   assert.deepEqual(savedIssueUpdate, { kind: "clear" })
 })
 
-test("a passed Meaning check keeps stored reminders when Groq fails", async () => {
+test("a passed Meaning check clears stored reminders when Groq fails", async () => {
   const deps = standIns()
   deps.checkMeaning = async () => passedMeaning
   deps.findWord = async () => ({

@@ -1,8 +1,8 @@
 import { isUsageCheckBusyError, type UsageCheck } from "@/lib/gemini-usage"
 import {
   parseCheckerSelection,
+  type ActiveGrammarChecker,
   type GrammarCheckSection,
-  type GrammarChecker,
   type ReviewIssue,
 } from "@/lib/issues"
 
@@ -17,7 +17,6 @@ export type UsageCheckDeps = {
   }) => Promise<UsageCheck>
   checkLanguageTool: (sentence: string) => Promise<{ message: string }[]>
   checkGroq: (sentence: string) => Promise<{ message: string }[]>
-  checkSapling?: (sentence: string) => Promise<{ message: string }[]>
   findWord: (id: string) => Promise<{
     id: string
     english: string
@@ -145,18 +144,17 @@ export async function handleUsageCheck(request: Request, deps: UsageCheckDeps) {
 async function gradeUsage(
   deps: UsageCheckDeps,
   params: { english: string; vietnamese: string; sentence: string },
-  checkers: GrammarChecker[]
+  checkers: ActiveGrammarChecker[]
 ): Promise<
   | { ok: true; grade: GradeOk }
   | { ok: false; error: string; reason?: "busy"; status: number }
 > {
   const callChecker: Record<
-    GrammarChecker,
+    ActiveGrammarChecker,
     (sentence: string) => Promise<{ message: string }[]>
   > = {
     LanguageTool: deps.checkLanguageTool,
     Groq: deps.checkGroq,
-    Sapling: deps.checkSapling ?? (() => Promise.resolve([])),
   }
   const meaningPromise = deps.checkMeaning(params)
   const checkerPromise = Promise.allSettled(
