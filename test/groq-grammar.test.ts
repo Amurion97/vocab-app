@@ -5,6 +5,13 @@ import { checkGroq } from "../lib/groq-grammar"
 
 const sentence = "He go to school"
 
+function testClient(mockClient: unknown) {
+  return {
+    apiKey: "test-key",
+    client: mockClient as never,
+  }
+}
+
 test("a missing Groq key throws before the request", async () => {
   const previous = process.env.GROQ_API_KEY
   delete process.env.GROQ_API_KEY
@@ -12,6 +19,12 @@ test("a missing Groq key throws before the request", async () => {
     await assert.rejects(checkGroq(sentence), {
       message: "Groq is unavailable.",
     })
+    await assert.rejects(
+      checkGroq(sentence, { client: { chat: {} } as never }),
+      {
+        message: "Groq is unavailable.",
+      }
+    )
   } finally {
     if (previous !== undefined) {
       process.env.GROQ_API_KEY = previous
@@ -45,7 +58,7 @@ test("an API error throws Groq is unavailable", async () => {
     },
   }
 
-  await assert.rejects(checkGroq(sentence, { client: mockClient as never }), {
+  await assert.rejects(checkGroq(sentence, testClient(mockClient)), {
     message: "Groq is unavailable.",
   })
 })
@@ -61,7 +74,7 @@ test("invalid JSON in completion returns empty array", async () => {
     },
   }
 
-  const result = await checkGroq(sentence, { client: mockClient as never })
+  const result = await checkGroq(sentence, testClient(mockClient))
   assert.deepEqual(result, [])
 })
 
@@ -76,7 +89,7 @@ test("empty edits array returns empty matches", async () => {
     },
   }
 
-  const result = await checkGroq(sentence, { client: mockClient as never })
+  const result = await checkGroq(sentence, testClient(mockClient))
   assert.deepEqual(result, [])
 })
 
@@ -106,7 +119,7 @@ test("edits are parsed into structured GrammarSuggestion with quote, highlight, 
     },
   }
 
-  const result = await checkGroq(sentence, { client: mockClient as never })
+  const result = await checkGroq(sentence, testClient(mockClient))
   assert.equal(result.length, 1)
   assert.deepEqual(result[0], {
     message: "Subject-verb agreement. go → goes",
@@ -127,7 +140,8 @@ test("edits are parsed into structured GrammarSuggestion with quote, highlight, 
   })
 })
 
-test("accepts suggestions key as alternative to edits", async () => {
+test("resolves sentence-relative start offset when clause context is also provided", async () => {
+  const repeatedSentence = "He stays at home but I stays at school"
   const mockClient = {
     chat: {
       completions: {
@@ -136,10 +150,13 @@ test("accepts suggestions key as alternative to edits", async () => {
             {
               message: {
                 content: JSON.stringify({
-                  suggestions: [
+                  edits: [
                     {
-                      original: "go",
-                      replacement: "goes",
+                      original: "stays",
+                      replacement: "stay",
+                      description: "Subject-verb agreement.",
+                      context: "but I stays at school",
+                      start: 23,
                     },
                   ],
                 }),
@@ -151,11 +168,15 @@ test("accepts suggestions key as alternative to edits", async () => {
     },
   }
 
-  const result = await checkGroq(sentence, { client: mockClient as never })
+  const result = await checkGroq(repeatedSentence, {
+    apiKey: "test-key",
+    client: mockClient as never,
+  })
   assert.equal(result.length, 1)
-  assert.equal(result[0]?.message, "go → goes")
-  assert.deepEqual(result[0]?.replacements, ["goes"])
-  assert.equal(result[0]?.quote?.word, "go")
+  assert.equal(result[0]?.quote?.word, "stays")
+  assert.equal(result[0]?.quote?.context, "but I stays at school")
+  assert.deepEqual(result[0]?.quote?.highlight, { offset: 6, length: 5 })
+  assert.equal(result[0]?.quote?.context?.slice(6, 11), "stays")
 })
 
 test("unquoted and wrapped keys in environment are handled", async () => {
@@ -215,9 +236,7 @@ test("a repeated word where 1st is correct and 2nd is wrong resolves via clause 
     },
   }
 
-  const result = await checkGroq(repeatedSentence, {
-    client: mockClient as never,
-  })
+  const result = await checkGroq(repeatedSentence, testClient(mockClient))
   assert.equal(result.length, 1)
   assert.equal(result[0]?.quote?.word, "stays")
   assert.equal(result[0]?.quote?.context, "but I stays at school")
@@ -252,9 +271,7 @@ test("a repeated word where 1st is correct and 2nd is wrong resolves via start o
     },
   }
 
-  const result = await checkGroq(repeatedSentence, {
-    client: mockClient as never,
-  })
+  const result = await checkGroq(repeatedSentence, testClient(mockClient))
   assert.equal(result.length, 1)
   assert.equal(result[0]?.quote?.word, "stays")
   assert.deepEqual(result[0]?.quote?.highlight, { offset: 23, length: 5 })
@@ -292,9 +309,7 @@ test("two identical errors of the same word in a sentence highlight distinct occ
     },
   }
 
-  const result = await checkGroq(repeatedSentence, {
-    client: mockClient as never,
-  })
+  const result = await checkGroq(repeatedSentence, testClient(mockClient))
   assert.equal(result.length, 2)
   assert.deepEqual(result[0]?.quote?.highlight, { offset: 2, length: 5 })
   assert.equal(result[0]?.quote?.context?.slice(2, 7), "stays")
