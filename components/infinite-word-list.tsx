@@ -15,13 +15,18 @@ interface InfiniteWordListProps {
 }
 
 export function InfiniteWordList({ initialPage }: InfiniteWordListProps) {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery({
-      ...wordsQueryOptions,
-      // Page one came from the server render as a prop, not an independent read.
-      // Without this shape TanStack Query refetches page one on mount.
-      initialData: wordsInitialData(initialPage),
-    })
+  const {
+    data: words = [],
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    ...wordsQueryOptions,
+    // Page one came from the server render as a prop, not an independent read.
+    // Without this shape TanStack Query refetches page one on mount.
+    initialData: wordsInitialData(initialPage),
+    select: (data) => data.pages.flatMap((page) => page.words),
+  })
 
   // Sentinel element ref to observe scrolling
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -49,8 +54,6 @@ export function InfiniteWordList({ initialPage }: InfiniteWordListProps) {
       observer.unobserve(sentinel)
     }
   }, [fetchNextPage, hasNextPage, isFetchingNextPage])
-
-  const words = data?.pages.flatMap((page) => page.words) ?? []
 
   // The empty state lives here rather than in the parent: the list must always
   // mount, or the query has nowhere to write the first Word into.

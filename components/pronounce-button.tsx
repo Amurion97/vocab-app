@@ -1,13 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Loader2Icon, Volume2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-
-// Module-level cache so repeating a word in the same session never triggers a
-// duplicate network request (and never burns more of the daily API quota).
-const audioCache = new Map<string, string>()
 
 // 1-sample silent WAV data URI to unlock audio on iOS/WebKit within a user gesture.
 const SILENT_AUDIO =
@@ -26,9 +23,43 @@ export function PronounceButton({
   size = "icon",
   className,
 }: PronounceButtonProps) {
-  const [isLoading, setIsLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const trimmed = word.trim()
+  const normalizedKey = trimmed.toLowerCase()
+
+  const {
+    data: cachedAudio,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["pronunciation", normalizedKey],
+    queryFn: async ({ signal }) => {
+      const response = await fetch(
+        `/api/pronunciation?word=${encodeURIComponent(trimmed)}`,
+        { signal }
+      )
+      const data = (await response.json().catch(() => null)) as {
+        ok: boolean
+        audioBase64?: string
+        format?: string
+      } | null
+      if (response.ok && data?.ok && data.audioBase64) {
+        const format = data.format || "mp3"
+        // RFC standard MIME type for MP3 is audio/mpeg. WebKit/Safari strictly
+        // rejects data:audio/mp3 with MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED.
+        const mime =
+          format.toLowerCase() === "mp3" ? "audio/mpeg" : `audio/${format}`
+        return `data:${mime};base64,${data.audioBase64}`
+      }
+      return null
+    },
+    enabled: false,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30, // 30 minutes
+    retry: false,
+  })
 
   useEffect(() => {
     return () => {
@@ -94,7 +125,6 @@ export function PronounceButton({
   )
 
   const onSpeak = useCallback(async () => {
-    const trimmed = word.trim()
     if (!trimmed) {
       return
     }
@@ -104,9 +134,8 @@ export function PronounceButton({
     }
     const audio = audioRef.current
 
-    const cached = audioCache.get(trimmed.toLowerCase())
-    if (cached) {
-      playAudio(cached, trimmed)
+    if (cachedAudio) {
+      playAudio(cachedAudio, trimmed)
       return
     }
 
@@ -117,37 +146,20 @@ export function PronounceButton({
       // Ignore silent audio prime rejection if any
     })
 
-    setIsLoading(true)
     try {
-      const response = await fetch(
-        `/api/pronunciation?word=${encodeURIComponent(trimmed)}`
-      )
-      const data = (await response.json().catch(() => null)) as {
-        ok: boolean
-        audioBase64?: string
-        format?: string
-      } | null
-      if (response.ok && data?.ok && data.audioBase64) {
-        const format = data.format || "mp3"
-        // RFC standard MIME type for MP3 is audio/mpeg. WebKit/Safari strictly
-        // rejects data:audio/mp3 with MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED.
-        const mime =
-          format.toLowerCase() === "mp3" ? "audio/mpeg" : `audio/${format}`
-        const dataUrl = `data:${mime};base64,${data.audioBase64}`
-        audioCache.set(trimmed.toLowerCase(), dataUrl)
-        playAudio(dataUrl, trimmed)
+      const result = await refetch()
+      if (result.data) {
+        playAudio(result.data, trimmed)
       } else {
         // Quota exhausted or upstream failure: the user still hears the word.
         fallbackToSpeech(trimmed)
       }
     } catch {
       fallbackToSpeech(trimmed)
-    } finally {
-      setIsLoading(false)
     }
-  }, [word, playAudio, fallbackToSpeech])
+  }, [trimmed, cachedAudio, playAudio, refetch, fallbackToSpeech])
 
-  const inactive = disabled || isLoading || isPlaying || !word.trim()
+  const inactive = disabled || isFetching || isPlaying || !trimmed
 
   return (
     <Button
@@ -159,7 +171,7 @@ export function PronounceButton({
       onClick={() => void onSpeak()}
       aria-label="Listen to pronunciation"
     >
-      {isLoading ? (
+      {isFetching ? (
         <Loader2Icon className="animate-spin" aria-hidden />
       ) : (
         <Volume2Icon aria-hidden />
