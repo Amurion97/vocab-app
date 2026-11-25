@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { nudgeSender } from "@/lib/clients/email"
 import { decideNudge } from "@/lib/nudge"
-import { prisma } from "@/lib/prisma"
-import { getNextReviewWord } from "@/lib/words"
+import { prisma } from "@/lib/dal/prisma"
+import { getNextReviewWord } from "@/lib/dal/words"
 
 function cronSecret(): string | undefined {
   const raw = process.env.CRON_SECRET?.trim()

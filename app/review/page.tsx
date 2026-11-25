@@ -4,7 +4,7 @@ import { QuizCard } from "@/components/quiz-card"
 import { ReviewCongrats } from "@/components/review-congrats"
 import { buttonVariants } from "@/components/ui/button"
 import { practisedToday } from "@/lib/nudge"
-import { getNextReviewWord } from "@/lib/words"
+import { getNextReviewWord } from "@/lib/dal/words"
 
 export default async function ReviewPage({
   searchParams,

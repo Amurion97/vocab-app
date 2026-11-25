@@ -1,7 +1,7 @@
 import type { Prisma, Word } from "@prisma/client"
 import { expect, test, type Page } from "@playwright/test"
 
-import { prisma } from "../lib/prisma"
+import { prisma } from "@/lib/dal"
 
 const PASS_WORD = {
   english: "ubiquitous",

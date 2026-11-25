@@ -1,7 +1,7 @@
 import type { Word } from "@prisma/client"
 
 import { parseIssues } from "@/lib/issues"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "./prisma"
 
 export async function getWords() {
   return prisma.word.findMany({

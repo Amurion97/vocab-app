@@ -3,16 +3,16 @@
 import { revalidatePath } from "next/cache"
 
 import { logExpectedError } from "@/lib/app-log"
-import { isUniqueConstraint } from "@/lib/db-error"
+import { isUniqueConstraint } from "@/lib/dal/db-error"
 import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
 import { translateEnglishToVietnamese } from "@/lib/clients/mymemory"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/dal/prisma"
 import {
   createWordSchema,
   fetchMoreWordsSchema,
   updateWordSchema,
 } from "@/lib/word-schemas"
-import { getPaginatedWords } from "@/lib/words"
+import { getPaginatedWords } from "@/lib/dal/words"
 import { Word } from "@prisma/client"
 
 export type ActionResult = { ok: true } | { ok: false; error: string }

@@ -1,5 +1,5 @@
 import { AddWordForm } from "@/components/add-word-form"
-import { getPaginatedWords } from "@/lib/words"
+import { getPaginatedWords } from "@/lib/dal/words"
 import { Suspense } from "react"
 import { InfiniteWordList } from "@/components/infinite-word-list"
 import { WordCardSkeleton } from "@/components/word-card"

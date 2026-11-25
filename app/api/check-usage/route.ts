@@ -7,7 +7,7 @@ import {
 } from "@/lib/clients/gemini-usage"
 import { checkGrammar } from "@/lib/clients/languagetool"
 import { checkGroq } from "@/lib/clients/groq-grammar"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/dal/prisma"
 import {
   handleUsageCheck,
   type IssueUpdate,
