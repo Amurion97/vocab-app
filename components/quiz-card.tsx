@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useUsageCheck } from "@/hooks/use-usage-check"
 
 export function QuizCard({ word }: { word: Word }) {
@@ -210,6 +211,47 @@ export function QuizCard({ word }: { word: Word }) {
           <GrammarCheckerCredit checkers={checkers} />
         </CardFooter>
       ) : null}
+    </Card>
+  )
+}
+
+export function QuizCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-7 w-7 rounded-md" />
+        </CardTitle>
+        <CardDescription>
+          <Skeleton className="h-4 w-48" />
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-1.5">
+          <Skeleton className="h-5 w-24 rounded-full" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+        </div>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-44" />
+            <Skeleton className="h-20 w-full rounded-lg" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-28" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-full rounded-lg" />
+        </div>
+      </CardContent>
     </Card>
   )
 }
