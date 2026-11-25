@@ -4,14 +4,14 @@ import { revalidatePath } from "next/cache"
 
 import { logExpectedError } from "@/lib/app-log"
 import { isUniqueConstraint } from "@/lib/dal/db-error"
-import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
+import type { GrammarCheckSection, ReviewIssue } from "@/lib/services/issues"
 import { translateEnglishToVietnamese } from "@/lib/clients/mymemory"
 import { prisma } from "@/lib/dal/prisma"
 import {
   createWordSchema,
   fetchMoreWordsSchema,
   updateWordSchema,
-} from "@/lib/word-schemas"
+} from "@/lib/schemas/word-schemas"
 import { getPaginatedWords } from "@/lib/dal/words"
 import { Word } from "@prisma/client"
 

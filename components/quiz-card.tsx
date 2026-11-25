@@ -5,7 +5,11 @@ import type { Word } from "@prisma/client"
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-import { parseIssues, reminderLabel, type GrammarChecker } from "@/lib/issues"
+import {
+  parseIssues,
+  reminderLabel,
+  type GrammarChecker,
+} from "@/lib/services/issues"
 import {
   GrammarCheckSections,
   GrammarCheckerCredit,

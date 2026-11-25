@@ -12,7 +12,7 @@ import {
   handleUsageCheck,
   type IssueUpdate,
   type UsageCheckDeps,
-} from "@/lib/usage-check"
+} from "@/lib/services/usage-check"
 import { exhaustiveCheck } from "@/lib/exhaustive-check"
 
 function issueUpdateToPrismaData(issueUpdate: IssueUpdate) {

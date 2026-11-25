@@ -3,7 +3,7 @@ import {
   type GrammarHighlight,
   type GrammarQuote,
   type GrammarSuggestion,
-} from "@/lib/issues"
+} from "@/lib/services/issues"
 
 export type GrammarMatch = GrammarSuggestion
 

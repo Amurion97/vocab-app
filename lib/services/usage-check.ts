@@ -10,7 +10,7 @@ import {
   type ActiveGrammarChecker,
   type GrammarCheckSection,
   type ReviewIssue,
-} from "@/lib/issues"
+} from "./issues"
 
 export type IssueUpdate =
   { kind: "clear" } | { kind: "set"; issues: ReviewIssue[] }

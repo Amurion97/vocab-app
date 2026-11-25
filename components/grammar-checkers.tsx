@@ -9,7 +9,7 @@ import {
   type GrammarCheckSection,
   type GrammarChecker,
   type GrammarSuggestion,
-} from "@/lib/issues"
+} from "@/lib/services/issues"
 
 const CHECKER_LINKS: Record<GrammarChecker, string> = {
   LanguageTool: "https://languagetool.org",

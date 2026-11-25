@@ -2,7 +2,7 @@ import assert from "node:assert"
 import { describe, it } from "node:test"
 
 import { resendSender } from "@/lib/clients/email"
-import { renderNudge, nudgeLink } from "@/lib/nudge"
+import { renderNudge, nudgeLink } from "@/lib/services/nudge"
 
 const apiKey = process.env.RESEND_API_KEY?.trim()
 const to = process.env.NUDGE_TO_EMAIL?.trim()

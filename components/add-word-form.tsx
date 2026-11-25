@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useUsageCheck } from "@/hooks/use-usage-check"
-import type { GrammarChecker } from "@/lib/issues"
+import type { GrammarChecker } from "@/lib/services/issues"
 import { prependWord } from "@/lib/word-queries"
 
 export function AddWordForm() {

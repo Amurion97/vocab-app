@@ -9,7 +9,7 @@ import {
   renderNudge,
   type DecideNudgeDeps,
   type NudgeWord,
-} from "@/lib/nudge"
+} from "@/lib/services/nudge"
 
 /**
  * Build a UTC Date from a VN-local clock time.

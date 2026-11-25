@@ -4,7 +4,7 @@ import {
   isRangeWithin,
   type GrammarQuote,
   type GrammarSuggestion,
-} from "@/lib/issues"
+} from "@/lib/services/issues"
 import type { GrammarMatch } from "./languagetool"
 
 export type GroqEdit = {

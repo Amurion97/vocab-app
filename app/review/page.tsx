@@ -3,7 +3,7 @@ import Link from "next/link"
 import { QuizCard } from "@/components/quiz-card"
 import { ReviewCongrats } from "@/components/review-congrats"
 import { buttonVariants } from "@/components/ui/button"
-import { practisedToday } from "@/lib/nudge"
+import { practisedToday } from "@/lib/services/nudge"
 import { getNextReviewWord } from "@/lib/dal/words"
 
 export default async function ReviewPage({

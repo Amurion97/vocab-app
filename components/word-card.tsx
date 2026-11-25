@@ -7,7 +7,7 @@ import type { Word } from "@prisma/client"
 import { CircleAlertIcon, PencilIcon, Trash2Icon } from "lucide-react"
 
 import { deleteWord, updateWord } from "@/app/actions"
-import { parseIssues, reminderLabel } from "@/lib/issues"
+import { parseIssues, reminderLabel } from "@/lib/services/issues"
 import {
   getWordsSnapshot,
   patchWord,

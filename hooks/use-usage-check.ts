@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react"
 
 import { type QuizResult } from "@/app/actions"
-import type { GrammarChecker } from "@/lib/issues"
+import type { GrammarChecker } from "@/lib/services/issues"
 
 const CANCEL_AFTER_MS = 2000
 

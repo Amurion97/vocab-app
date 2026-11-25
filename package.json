@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "with-env": "dotenv -e .env.local -e .env --",
     "test": "node --experimental-strip-types --import ./test/register.mjs --test test/*.test.ts",
-    "send-email-test": "node --experimental-strip-types --import ./test/register.mjs --test test/nudge-email.e2e.ts",
+    "send-email-test": "npm run with-env -- node --experimental-strip-types --import ./test/register.mjs --test test/nudge-email.e2e.ts",
     "groq-e2e-test": "npm run with-env -- node --experimental-strip-types --import ./test/register.mjs --test test/groq-grammar.e2e.ts",
     "test:e2e": "bun run with-env -- playwright test",
     "test:e2e:ui": "bun run with-env -- playwright test --ui",

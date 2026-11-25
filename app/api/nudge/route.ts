@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { nudgeSender } from "@/lib/clients/email"
-import { decideNudge } from "@/lib/nudge"
+import { decideNudge } from "@/lib/services/nudge"
 import { prisma } from "@/lib/dal/prisma"
 import { getNextReviewWord } from "@/lib/dal/words"
 

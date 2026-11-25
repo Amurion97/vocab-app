@@ -1,6 +1,6 @@
 import type { Word } from "@prisma/client"
 
-import { parseIssues } from "@/lib/issues"
+import { parseIssues } from "@/lib/services/issues"
 import { prisma } from "./prisma"
 
 export async function getWords() {

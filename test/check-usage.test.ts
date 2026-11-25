@@ -1,9 +1,9 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { UsageCheck } from "../lib/clients/gemini-usage"
-import { parseIssues } from "../lib/issues"
-import { handleUsageCheck, type UsageCheckDeps } from "../lib/usage-check"
+import type { UsageCheck } from "@/lib/clients"
+import { parseIssues } from "@/lib/services"
+import { handleUsageCheck, type UsageCheckDeps } from "@/lib/services"
 
 const passedMeaning: UsageCheck = {
   wordPresent: true,
