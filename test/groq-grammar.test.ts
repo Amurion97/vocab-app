@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { checkGroq } from "../lib/groq-grammar"
+import { checkGroq } from "../lib/clients/groq-grammar"
 
 const sentence = "He go to school"
 

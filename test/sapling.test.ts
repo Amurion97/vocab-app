@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { checkSapling } from "../lib/sapling"
-import type { GrammarMatch } from "../lib/languagetool"
+import { checkSapling } from "../lib/clients/sapling"
+import type { GrammarMatch } from "../lib/clients/languagetool"
 
 const sentence = "He go to school"
 

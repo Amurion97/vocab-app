@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { checkGrammar, type GrammarMatch } from "../lib/languagetool"
+import { checkGrammar, type GrammarMatch } from "../lib/clients/languagetool"
 
 const sentence = "using worker threds"
 const fullSentence = "using worker threds and gorutines"

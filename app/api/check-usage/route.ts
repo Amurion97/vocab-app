@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
-import { checkWordUsage, logUsageCheckFailure } from "@/lib/gemini-usage"
-import { checkGrammar } from "@/lib/languagetool"
-import { checkGroq } from "@/lib/groq-grammar"
+import {
+  checkWordUsage,
+  logUsageCheckFailure,
+} from "@/lib/clients/gemini-usage"
+import { checkGrammar } from "@/lib/clients/languagetool"
+import { checkGroq } from "@/lib/clients/groq-grammar"
 import { prisma } from "@/lib/prisma"
 import {
   handleUsageCheck,

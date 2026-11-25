@@ -5,7 +5,7 @@ import {
   type GrammarQuote,
   type GrammarSuggestion,
 } from "@/lib/issues"
-import type { GrammarMatch } from "@/lib/languagetool"
+import type { GrammarMatch } from "./languagetool"
 
 export type GroqEdit = {
   original?: string

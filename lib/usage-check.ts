@@ -1,6 +1,9 @@
 import { z } from "zod"
 
-import { isUsageCheckBusyError, type UsageCheck } from "@/lib/gemini-usage"
+import {
+  isUsageCheckBusyError,
+  type UsageCheck,
+} from "@/lib/clients/gemini-usage"
 import {
   GRAMMAR_CHECKERS,
   parseCheckerSelection,

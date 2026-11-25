@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { nudgeSender } from "@/lib/email"
+import { nudgeSender } from "@/lib/clients/email"
 import { decideNudge } from "@/lib/nudge"
 import { prisma } from "@/lib/prisma"
 import { getNextReviewWord } from "@/lib/words"

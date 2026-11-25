@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { UsageCheck } from "../lib/gemini-usage"
+import type { UsageCheck } from "../lib/clients/gemini-usage"
 import { parseIssues } from "../lib/issues"
 import { handleUsageCheck, type UsageCheckDeps } from "../lib/usage-check"
 

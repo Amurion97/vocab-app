@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { checkGroq } from "@/lib/groq-grammar"
-import type { GrammarMatch } from "@/lib/languagetool"
+import { checkGroq } from "@/lib/clients/groq-grammar"
+import type { GrammarMatch } from "@/lib/clients/languagetool"
 
 const apiKey = process.env.GROQ_API_KEY?.trim()
 const delayMs = Number(process.env.GROQ_E2E_DELAY_MS ?? "0")

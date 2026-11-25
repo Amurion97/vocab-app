@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 import { logExpectedError } from "@/lib/app-log"
 import { isUniqueConstraint } from "@/lib/db-error"
 import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
-import { translateEnglishToVietnamese } from "@/lib/mymemory"
+import { translateEnglishToVietnamese } from "@/lib/clients/mymemory"
 import { prisma } from "@/lib/prisma"
 import {
   createWordSchema,

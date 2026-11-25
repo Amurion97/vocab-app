@@ -6,7 +6,7 @@ import { exhaustiveCheck } from "@/lib/exhaustive-check"
 import {
   fetchPronunciation,
   type PronunciationErrorKind,
-} from "@/lib/quickpronounce"
+} from "@/lib/clients/quickpronounce"
 
 // The free QuickPronounce tier allows 50 requests/day, so every hit counts.
 // Cache successful lookups in-memory for the life of the server process and
