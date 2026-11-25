@@ -13,7 +13,7 @@ import {
   type IssueUpdate,
   type UsageCheckDeps,
 } from "@/lib/services/usage-check"
-import { exhaustiveCheck } from "@/lib/exhaustive-check"
+import { exhaustiveCheck } from "@/lib/utils/exhaustive-check"
 
 function issueUpdateToPrismaData(issueUpdate: IssueUpdate) {
   if (issueUpdate.kind === "clear") return { issues: [] }

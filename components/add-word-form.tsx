@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useUsageCheck } from "@/hooks/use-usage-check"
 import type { GrammarChecker } from "@/lib/services/issues"
-import { prependWord } from "@/lib/word-queries"
+import { prependWord } from "@/lib/queries/word-queries"
 
 export function AddWordForm() {
   const [english, setEnglish] = useState("")

@@ -8,7 +8,7 @@ import {
   wordsInitialData,
   wordsQueryOptions,
   type WordPage,
-} from "@/lib/word-queries"
+} from "@/lib/queries/word-queries"
 
 interface InfiniteWordListProps {
   initialPage: WordPage

@@ -1,4 +1,4 @@
-import { logExpectedError } from "@/lib/app-log"
+import { logExpectedError } from "@/lib/utils/app-log"
 
 type MyMemoryResponse = {
   responseStatus?: number

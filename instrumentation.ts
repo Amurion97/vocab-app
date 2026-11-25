@@ -1,6 +1,6 @@
 import type { Instrumentation } from "next"
 
-import { logUnexpectedError } from "@/lib/app-log"
+import { logUnexpectedError } from "@/lib/utils/app-log"
 
 export const onRequestError: Instrumentation.onRequestError = (
   error,

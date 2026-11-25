@@ -14,7 +14,7 @@ import {
   removeWord,
   restoreWords,
   wordKeys,
-} from "@/lib/word-queries"
+} from "@/lib/queries/word-queries"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"

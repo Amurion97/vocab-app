@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { logUnexpectedError } from "@/lib/app-log"
-import { exhaustiveCheck } from "@/lib/exhaustive-check"
+import { logUnexpectedError } from "@/lib/utils/app-log"
+import { exhaustiveCheck } from "@/lib/utils/exhaustive-check"
 import {
   fetchPronunciation,
   type PronunciationErrorKind,

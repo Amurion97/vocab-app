@@ -1,4 +1,4 @@
-import { logExpectedError } from "@/lib/app-log"
+import { logExpectedError } from "@/lib/utils/app-log"
 
 // Server-side helper for the QuickPronounce API. Never import this from a
 // client component: it reads the API key from the server environment.

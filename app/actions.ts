@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-import { logExpectedError } from "@/lib/app-log"
+import { logExpectedError } from "@/lib/utils/app-log"
 import { isUniqueConstraint } from "@/lib/dal/db-error"
 import type { GrammarCheckSection, ReviewIssue } from "@/lib/services/issues"
 import { translateEnglishToVietnamese } from "@/lib/clients/mymemory"
