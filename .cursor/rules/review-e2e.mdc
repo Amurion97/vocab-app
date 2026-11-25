@@ -1,0 +1,18 @@
+---
+description: Ensure review E2E tests are updated and verified when review flow or UI changes
+globs: app/review/**,components/quiz-card.tsx,components/review-congrats.tsx,components/usage-check-actions.tsx,app/api/check-usage/**
+alwaysApply: false
+---
+
+# Review Flow E2E Sync
+
+When making changes to the review flow, quiz card, congrats screen, check actions, or usage check API:
+
+1. **Check E2E test coverage in `e2e/review.spec.ts`**:
+   - If form labels, placeholders, or button names changed, update the accessible locators (`getByLabel`, `getByRole`).
+   - If alert titles or feedback strings changed, update the `getByRole("alert")` filters.
+   - If review lifecycle, scheduling (e.g. SM-2), or congrats conditions changed, update the persistence / reload assertions.
+   - If retry behavior changed (e.g. clearing vs. keeping sentence), update the retry assertion.
+
+2. **Verify with Playwright**:
+   - Run `bun run test:e2e` before completing the task to confirm live browser interactions, Gemini usage check, and Prisma persistence pass.

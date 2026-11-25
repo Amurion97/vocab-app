@@ -37,3 +37,9 @@ next-env.d.ts
 
 #cursor plans
 .cursor/plans
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
