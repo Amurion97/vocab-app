@@ -7,6 +7,11 @@ import { isUniqueConstraint } from "@/lib/db-error"
 import type { GrammarCheckSection, ReviewIssue } from "@/lib/issues"
 import { translateEnglishToVietnamese } from "@/lib/mymemory"
 import { prisma } from "@/lib/prisma"
+import {
+  createWordSchema,
+  fetchMoreWordsSchema,
+  updateWordSchema,
+} from "@/lib/word-schemas"
 import { getPaginatedWords } from "@/lib/words"
 import { Word } from "@prisma/client"
 
@@ -67,13 +72,12 @@ export async function createWord(input: {
   vietnamese: string
   example: string
 }): Promise<CreateWordResult> {
-  const english = input.english.trim()
-  const vietnamese = input.vietnamese.trim()
-  const example = input.example.trim()
-
-  if (!english || !vietnamese) {
+  const parsed = createWordSchema.safeParse(input)
+  if (!parsed.success) {
     return { ok: false, error: "English and Vietnamese are required." }
   }
+
+  const { english, vietnamese, example } = parsed.data
   let word: Word
   try {
     word = await prisma.word.create({
@@ -96,8 +100,16 @@ export async function createWord(input: {
 }
 
 export async function fetchMoreWords(limit: number, cursor?: string) {
+  const parsed = fetchMoreWordsSchema.safeParse({ limit, cursor })
+  if (!parsed.success) {
+    return { ok: false as const, error: "Failed to load more words." }
+  }
+
   try {
-    const result = await getPaginatedWords(limit, cursor)
+    const result = await getPaginatedWords(
+      parsed.data.limit,
+      parsed.data.cursor
+    )
     return { ok: true as const, ...result }
   } catch (error) {
     console.error("Failed to fetch more words:", error)
@@ -109,17 +121,16 @@ export async function updateWord(
   id: string,
   input: { vietnamese: string; example: string }
 ): Promise<UpdateWordResult> {
-  const vietnamese = input.vietnamese.trim()
-  const example = input.example.trim()
-
-  if (!vietnamese) {
+  const parsed = updateWordSchema.safeParse({ id, ...input })
+  if (!parsed.success) {
     return { ok: false, error: "Vietnamese is required." }
   }
 
+  const { vietnamese, example } = parsed.data
   let word: Word
   try {
     word = await prisma.word.update({
-      where: { id },
+      where: { id: parsed.data.id },
       data: {
         vietnamese,
         example: example || null,

@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 export const GRAMMAR_CHECKERS = ["LanguageTool", "Groq"] as const
 
 export type ActiveGrammarChecker = (typeof GRAMMAR_CHECKERS)[number]
@@ -49,24 +51,24 @@ export function isRangeWithin(
   return offset >= 0 && length > 0 && offset <= text.length - length
 }
 
+export const checkerSelectionSchema = z
+  .array(z.enum(GRAMMAR_CHECKERS))
+  .nonempty()
+  .transform((items) => {
+    const selected: ActiveGrammarChecker[] = []
+    for (const item of items) {
+      if (!selected.includes(item)) {
+        selected.push(item)
+      }
+    }
+    return selected
+  })
+
 export function parseCheckerSelection(
   value: unknown
 ): ActiveGrammarChecker[] | null {
-  if (!Array.isArray(value) || value.length === 0) {
-    return null
-  }
-
-  const selected: ActiveGrammarChecker[] = []
-  for (const item of value) {
-    if (!GRAMMAR_CHECKERS.includes(item as ActiveGrammarChecker)) {
-      return null
-    }
-    if (!selected.includes(item as ActiveGrammarChecker)) {
-      selected.push(item as ActiveGrammarChecker)
-    }
-  }
-
-  return selected
+  const result = checkerSelectionSchema.safeParse(value)
+  return result.success ? result.data : null
 }
 
 export type GrammarCheckSection = {
@@ -75,63 +77,51 @@ export type GrammarCheckSection = {
   suggestions: GrammarSuggestion[]
 }
 
+export const grammarHighlightSchema = z.object({
+  offset: z.number().int().nonnegative(),
+  length: z.number().int().positive(),
+})
+
+const baseIssueSchema = z.object({
+  severity: z.enum(["error", "warning"]),
+  message: z.string(),
+  highlight: grammarHighlightSchema.optional(),
+})
+
+const meaningIssueSchema = baseIssueSchema.extend({
+  source: z.literal("meaning"),
+})
+
+const grammarIssueSchema = baseIssueSchema.extend({
+  source: z.literal("grammar"),
+  checker: z.enum(["LanguageTool", "Groq", "Sapling"]).optional(),
+})
+
+export const reviewIssueSchema = z
+  .discriminatedUnion("source", [meaningIssueSchema, grammarIssueSchema])
+  .refine(
+    (issue) =>
+      !issue.highlight ||
+      isRangeWithin(
+        issue.message,
+        issue.highlight.offset,
+        issue.highlight.length
+      ),
+    {
+      message: "Highlight range must be within message",
+      path: ["highlight"],
+    }
+  )
+
 export function parseIssues(value: unknown): ReviewIssue[] {
   if (!Array.isArray(value)) {
     return []
   }
 
   return value.flatMap((item) => {
-    const issue = readIssue(item)
-    return issue ? [issue] : []
+    const result = reviewIssueSchema.safeParse(item)
+    return result.success ? [result.data] : []
   })
-}
-
-function readIssue(value: unknown): ReviewIssue | null {
-  if (!value || typeof value !== "object") {
-    return null
-  }
-
-  const issue = value as Partial<ReviewIssue>
-  if (
-    (issue.source !== "meaning" && issue.source !== "grammar") ||
-    (issue.severity !== "error" && issue.severity !== "warning") ||
-    typeof issue.message !== "string"
-  ) {
-    return null
-  }
-
-  const parsed: ReviewIssue = {
-    source: issue.source,
-    severity: issue.severity,
-    message: issue.message,
-  }
-  if (
-    parsed.source === "grammar" &&
-    (issue.checker === "LanguageTool" ||
-      issue.checker === "Groq" ||
-      issue.checker === "Sapling")
-  ) {
-    parsed.checker = issue.checker
-  }
-  const highlight = readHighlight(issue.highlight, parsed.message)
-  if (highlight) {
-    parsed.highlight = highlight
-  }
-  return parsed
-}
-
-function readHighlight(
-  value: unknown,
-  message: string
-): GrammarHighlight | null {
-  if (!value || typeof value !== "object") {
-    return null
-  }
-  const { offset, length } = value as Partial<GrammarHighlight>
-  if (!isRangeWithin(message, offset, length)) {
-    return null
-  }
-  return { offset: offset as number, length: length as number }
 }
 
 export function reminderLabel(issue: ReviewIssue): string {

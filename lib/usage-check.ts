@@ -1,5 +1,8 @@
+import { z } from "zod"
+
 import { isUsageCheckBusyError, type UsageCheck } from "@/lib/gemini-usage"
 import {
+  GRAMMAR_CHECKERS,
   parseCheckerSelection,
   type ActiveGrammarChecker,
   type GrammarCheckSection,
@@ -53,38 +56,73 @@ function decideIssueUpdate(
   return { kind: "set", issues }
 }
 
+export const usageCheckRequestSchema = z
+  .object(
+    {
+      sentence: z
+        .string({
+          required_error: "Missing word or sentence.",
+          invalid_type_error: "Missing word or sentence.",
+        })
+        .refine((val) => val.trim().length > 0, {
+          message: "Write a sentence using the word.",
+        })
+        .transform((val) => val.trim()),
+      checkers: z.preprocess(
+        (val) => parseCheckerSelection(val),
+        z
+          .array(z.enum(GRAMMAR_CHECKERS), {
+            invalid_type_error: "Choose LanguageTool, Groq, or both.",
+            required_error: "Choose LanguageTool, Groq, or both.",
+          })
+          .nonempty({
+            message: "Choose LanguageTool, Groq, or both.",
+          })
+      ),
+      wordId: z.string().min(1).optional(),
+      english: z.string().optional(),
+      vietnamese: z.string().optional(),
+    },
+    {
+      required_error: "Missing word or sentence.",
+      invalid_type_error: "Missing word or sentence.",
+    }
+  )
+  .superRefine((data, ctx) => {
+    if (!data.wordId) {
+      const eng = typeof data.english === "string" ? data.english.trim() : ""
+      const vie =
+        typeof data.vietnamese === "string" ? data.vietnamese.trim() : ""
+      if (!eng || !vie) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "English, Vietnamese, and a sentence are required.",
+        })
+      }
+    }
+  })
+
 export async function handleUsageCheck(request: Request, deps: UsageCheckDeps) {
-  const body = (await request.json()) as {
-    wordId?: string
-    english?: string
-    vietnamese?: string
-    sentence?: string
-    checkers?: unknown
-  }
+  const body = await request.json()
 
-  if (typeof body.sentence !== "string") {
-    return json({ ok: false, error: "Missing word or sentence." }, 400)
-  }
-
-  const trimmed = body.sentence.trim()
-  if (!trimmed) {
-    return json({ ok: false, error: "Write a sentence using the word." }, 400)
-  }
-
-  const checkers = parseCheckerSelection(body.checkers)
-  if (!checkers) {
+  const parsed = usageCheckRequestSchema.safeParse(body)
+  if (!parsed.success) {
     return json(
-      { ok: false, error: "Choose LanguageTool, Groq, or both." },
+      {
+        ok: false,
+        error: parsed.error.issues[0]?.message ?? "Missing word or sentence.",
+      },
       400
     )
   }
 
+  const { sentence, checkers, wordId } = parsed.data
   let english: string
   let vietnamese: string
   let persistWordId: string | undefined
 
-  if (body.wordId) {
-    const word = await deps.findWord(body.wordId)
+  if (wordId) {
+    const word = await deps.findWord(wordId)
     if (!word) {
       return json(
         { ok: false, error: "That word is no longer in your list." },
@@ -95,26 +133,13 @@ export async function handleUsageCheck(request: Request, deps: UsageCheckDeps) {
     vietnamese = word.vietnamese
     persistWordId = word.id
   } else {
-    const nextEnglish =
-      typeof body.english === "string" ? body.english.trim() : ""
-    const nextVietnamese =
-      typeof body.vietnamese === "string" ? body.vietnamese.trim() : ""
-    if (!nextEnglish || !nextVietnamese) {
-      return json(
-        {
-          ok: false,
-          error: "English, Vietnamese, and a sentence are required.",
-        },
-        400
-      )
-    }
-    english = nextEnglish
-    vietnamese = nextVietnamese
+    english = parsed.data.english!.trim()
+    vietnamese = parsed.data.vietnamese!.trim()
   }
 
   const graded = await gradeUsage(
     deps,
-    { english, vietnamese, sentence: trimmed },
+    { english, vietnamese, sentence },
     checkers
   )
   if (!graded.ok) {
@@ -131,7 +156,7 @@ export async function handleUsageCheck(request: Request, deps: UsageCheckDeps) {
   if (persistWordId) {
     await deps.saveAttempt({
       wordId: persistWordId,
-      sentence: trimmed,
+      sentence,
       passed: graded.grade.passed,
       issueUpdate: decideIssueUpdate(graded.grade.passed, graded.grade.issues),
     })

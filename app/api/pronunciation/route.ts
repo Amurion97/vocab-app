@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
 
 import { logUnexpectedError } from "@/lib/app-log"
 import { exhaustiveCheck } from "@/lib/exhaustive-check"
@@ -36,17 +37,35 @@ function statusForErrorKind(kind: PronunciationErrorKind): number {
   }
 }
 
+export const pronunciationQuerySchema = z.object({
+  word: z
+    .string({
+      required_error: "A word of 1-100 characters is required.",
+      invalid_type_error: "A word of 1-100 characters is required.",
+    })
+    .transform((val) => val.trim())
+    .refine((val) => val.length >= 1 && val.length <= 100, {
+      message: "A word of 1-100 characters is required.",
+    }),
+})
+
 export async function GET(request: Request) {
   try {
-    const word = new URL(request.url).searchParams.get("word")?.trim() ?? ""
-    if (!word || word.length > 100) {
+    const rawWord = new URL(request.url).searchParams.get("word")
+    const parsed = pronunciationQuerySchema.safeParse({ word: rawWord })
+    if (!parsed.success) {
       return NextResponse.json(
-        { ok: false, error: "A word of 1-100 characters is required." },
+        {
+          ok: false,
+          error:
+            parsed.error.issues[0]?.message ??
+            "A word of 1-100 characters is required.",
+        },
         { status: 400 }
       )
     }
 
-    const normalized = word.toLowerCase()
+    const normalized = parsed.data.word.toLowerCase()
     const cached = pronunciationCache.get(normalized)
     if (cached) {
       return NextResponse.json(
